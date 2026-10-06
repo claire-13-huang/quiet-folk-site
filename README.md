@@ -4,7 +4,7 @@ Live website: https://claire-13-huang.github.io/quiet-folk-site/
 
 Editable source: https://github.com/claire-13-huang/quiet-folk-site
 
-A private invitation for Colette, from the cinematic entry and original opening film through envelope, getaway invitation, celebration, meeting confirmation, food choice, itinerary note and a hidden personal letter. Choices stay in page state and are not transmitted or persisted after leaving the page.
+A private invitation for Colette, from the cinematic entry and original opening film through envelope, getaway invitation, celebration, meeting confirmation, food choice, itinerary note, an Olive dialogue and a private personal letter. Choices stay in page state and are not transmitted or persisted after leaving the page.
 
 ## Development and publishing
 
@@ -14,7 +14,7 @@ The public main branch stores editable source, runtime media, package manifests 
 
 ## Experience
 
-Come in starts the inline opening video from zero with its unchanged embedded audio, while entry text fades and the initial blur clears. The final half-second introduces the existing sealed-envelope artwork as the bridge into the desk scene. The understated prompt opens the envelope; the card stays blank throughout extraction, then reveals the revised getaway invitation line by line. The second choice retains its bounded evasive behavior.
+The restrained For Colette / I made something for you. entry uses the existing artwork defocused behind a dark navy and amber treatment. Come in starts the inline opening video from zero with its unchanged embedded audio, while entry text fades and the initial blur clears. The final video frame holds for 350 ms; the already-mounted, decoded sealed-envelope artwork then moves into the desk scene over 1100 ms while the room crossfades underneath. The understated prompt opens the envelope; the card stays blank throughout extraction, then reveals the revised getaway invitation line by line. The second choice retains its bounded evasive behavior.
 
 Two quiet CC0 paper recordings accompany envelope opening and card sliding. They preload, decode after the entry gesture and use the browser's native Web Audio API without an added library. A single audio owner stops paper sources before either video starts. Both videos keep their original embedded audio; leaving the tab pauses playback and Resume continues the same position. Source and reuse details are in AUDIO_SOURCES.md.
 
@@ -22,7 +22,7 @@ Celebration title timing follows video duration minus 4.5 seconds, with the seco
 
 Meeting and food retain the approved centered stationery geometry. Food heading and option rows reveal progressively. Selection shows the dessert line and proceeds after one second. The smaller itinerary note summarizes confirmed or flexible meeting time and selected food; Let's decide later resolves to We'll decide together ♡.
 
-After 1.2 seconds, a small existing-style envelope peeks from behind the itinerary's lower-right edge. The summary stays until it is opened. The note moves to center and opens into an HTML letter, revealed paragraph by paragraph. A quiet See you soon. ♡ follows the signature. The letter supports contained scrolling when needed. No large ending message, extra question or Replay control is added.
+After a three-second itinerary pause, the summary fades away and the camera moves gently toward Olive over 1.4 seconds. A translucent, old-gold-edged dialogue box advances through three lines by click or tap. After the last line, Olive reveals a small sealed envelope with a muted burgundy wax seal. Opening it fades the dialogue, recenters the room and moves the envelope to center; the seal releases, the paper opens and an HTML letter slides out, revealed paragraph by paragraph. A quiet See you soon. ♡ follows the signature. The letter supports contained scrolling when needed. No large ending message, extra question or Replay control is added.
 
 Cormorant Garamond and EB Garamond are self-hosted with their SIL Open Font License notices and serif fallbacks. Visuals are existing artwork or direct frame extractions; no artwork is regenerated.
 
