@@ -30,6 +30,13 @@ Production preview at `/quiet-folk-site/` passed natural video playback → imme
 
 Video uses `preload="auto"`; Scene 02 images were decoded by 2.5 seconds into the 16-second film. Desktop handoff frames and all three viewport screenshots were visually inspected. Stable copy did not shift when choices appeared, and resizing the extracted card did not replay extraction.
 
-GitHub Pages publishing source is GitHub Actions. The first automatic production build/deployment succeeded in run `37432825042`. The final clip correction is published through the same workflow; final live verification is recorded below.
+GitHub Pages publishing source is GitHub Actions. The first automatic production build/deployment succeeded in run `37432825042`. The final clip correction passed automatic build and deployment in run `37433204702`, source commit `11d59b92f4da2fdbb554d53764da45763aa48c39`.
 
 Original visual files and runtime media remain unchanged. Mobile acceptance uses browser emulation rather than a physical iPhone.
+
+
+## Live verification
+
+The unchanged production address returned the new production asset versions. Natural opening playback → immediate envelope interaction → exact invitation copy → NO → YES passed at 390×844 with touch emulation and 1440×900 with mouse input. Scene 02 images were ready while the film played. The card remained centered, scene scroll offsets stayed zero, and no console/page errors or failed asset responses occurred. Live NO movement measured 93px on mobile and 110px on desktop.
+
+The supplied film ending and Scene 02 image use different compositions. The camera pullback softens their size difference; their fade retains a brief image overlap. Artistic preference for this overlap and pullback pacing remains a visual judgment.
