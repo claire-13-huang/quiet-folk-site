@@ -223,7 +223,7 @@ export function App() {
             }}
             onPause={() => { if (entered.current && !filmFinished.current && !video.current?.ended) setPlayBlocked(true) }}
             onEnded={() => { filmFinished.current = true; if (assetsReady) beginEnvelope() }}
-            onError={() => setVideoFailed(true)} src={media('opening.mp4')} />
+            onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className="film-start" disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Enter'}
           </button>}
