@@ -20,9 +20,16 @@ Production URL: https://claire-13-huang.github.io/quiet-folk-site/
 - Each NO movement is measured from its current position and remains within screen margins.
 - Resizing a displayed card updates its final position without replaying extraction.
 - The room and mobile background dim together after extraction; the card stays sharp.
+- The experience clips oversized scene layers without becoming a scroll container; immediate opening cannot shift the whole scene.
 
 ## Verification
 
-Independent source/configuration/workflow review passed. Production build and typecheck passed. Three-size production flow and final live deployment results are recorded after execution.
+Independent source/configuration/workflow and publishing-tree review passed. Production build and typecheck passed both in the local source project and in the curated publishing checkout.
+
+Production preview at `/quiet-folk-site/` passed natural video playback → immediate envelope opening → sequential copy → repeated NO movement → YES at 390×844, 430×932 and 1440×900. Mobile runs used touch-enabled Chromium contexts. All cards stayed centered within the viewport; no horizontal or internal scene scrolling occurred. Eight consecutive NO moves per size stayed within 16px screen margins and moved 93–110px each. No console/page errors or HTTP asset errors occurred.
+
+Video uses `preload="auto"`; Scene 02 images were decoded by 2.5 seconds into the 16-second film. Desktop handoff frames and all three viewport screenshots were visually inspected. Stable copy did not shift when choices appeared, and resizing the extracted card did not replay extraction.
+
+GitHub Pages publishing source is GitHub Actions. The first automatic production build/deployment succeeded in run `37432825042`. The final clip correction is published through the same workflow; final live verification is recorded below.
 
 Original visual files and runtime media remain unchanged. Mobile acceptance uses browser emulation rather than a physical iPhone.
