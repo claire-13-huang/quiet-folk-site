@@ -2,7 +2,7 @@
 
 ## Scope and source
 
-Preserve the opening film, envelope and invitation. Replace the temporary YES screen with the approved celebration video and explicit meeting confirmation. No food question or new artwork is implemented. Answers remain local to the current page.
+Preserve the opening film, envelope and invitation. Replace the temporary YES screen with the approved celebration video and explicit meeting confirmation. The remaining food-choice, final-summary and ending flow is now implemented as documented below. No new artwork is implemented. Answers remain local to the current page.
 
 The public main branch stores editable Vite/React/TypeScript source. GitHub Actions builds and publishes only dist. Vite base: `/quiet-folk-site/`. Production address: https://claire-13-huang.github.io/quiet-folk-site/
 
@@ -20,7 +20,7 @@ Enter and YES call play directly within their user gestures on already-mounted i
 
 Celebration preloads before YES. The invitation exits over 280 ms with a slight scale change; celebration fades underneath from approximately 200 to 600 ms. Subtitles use the video clock at duration minus 4.5 seconds and 700 ms later, with an 800 ms line-level fade and 10 px rise, fading during the last 300 ms. The actual ended video stays mounted, holds for 400 ms, then gradually blurs to 5 px on mobile or 6 px on desktop, dims to 0.76 or 0.74, and scales to 1.01.
 
-The meeting card reuses the existing botanical paper and exact date/airport copy. Its choices provide local selection feedback without advancing to another question. Portrait playback contains the entire picture, with a soft fill outside it. The cinematic title is centered in the upper safe area. The meeting card reuses the original invitation geometry and paper at each viewport, centered on both axes.
+The meeting card reuses the existing botanical paper and exact date/airport copy. Its choices provide local selection feedback before advancing through the remaining flow described below. Portrait playback contains the entire picture, with a soft fill outside it. The cinematic title is centered in the upper safe area. The meeting card reuses the original invitation geometry and paper at each viewport, centered on both axes.
 
 Leaving the tab pauses both videos, including pending playback. Returning requires Resume and keeps the existing video position and subtitle clock. Rejected playback keeps the poster visible and offers another user gesture; no silent autoplay fallback is used.
 
@@ -47,3 +47,15 @@ Celebration title timing follows loaded video duration: first line at duration m
 One targeted desktop check at 1440×900 and one mobile check at 390×844 passed for this correction, bypassing the opening film and seeking celebration to its final six seconds. No production debugging entry is added.
 
 Measured original/meeting shells match exactly: 760×410.8 px on desktop and 358×438 px on mobile. Meeting centers equal viewport centers. Both title lines were fully visible around video time 9 seconds. No page/console errors or horizontal scrolling occurred. The initial mobile meeting screenshot exposed hidden background characters; the same final video frame now moves gently to the upper area in that state, retaining all faces above the centered card. Only that failed mobile screenshot was rechecked.
+
+## Remaining flow acceptance — 2026-10-07
+
+Only App.tsx and scene-specific CSS change the experience. Scene 01, envelope opening, original invitation, YES/NO, video files, embedded audio and the approved meeting card appearance remain unchanged. No new dependencies, assets, forms, food photos, restaurant cards, debugging UI or architecture layer is introduced.
+
+Meeting YES stores meetingConfirmed=true and advances to food-choice. Adjusting displays the exact two-line reassurance for 1.2 seconds, then advances with meetingConfirmed=false. Food selection stores foodChoice, disables further selection, reveals the exact dessert line, then advances after one second. The summary shows the requested date, confirmed or flexible airport time and food choice; You choose for me resolves to the requested personal alternative. It holds three seconds before ending.
+
+Food and summary use the same paperEnd geometry, paper artwork, centered position and shallow-focus celebration final frame as meeting confirmation. Desktop uses two food columns, mobile one. Ending fades the card over 800 ms, clears background blur over 1.25 seconds, retains the same video/frame and reveals its three exact lines at 700, 1400 and 2300 ms. No Replay control is included.
+
+One direct state-jump visual check at 1440×900 and one at 390×844 passed without replaying either film. The state jump existed only in browser test code. Confirmed/Japanese and adjusted/You choose for me paths both produced the correct summaries. Food shells matched meeting shells exactly (760×410.8 and 358×438 px). Dessert appeared, summary held approximately 3007–3010 ms, all ending lines reached full opacity, no card remained and the background reached blur(0px) brightness(1). Screenshots of food, summary and ending were visually inspected at both sizes. No page/console/HTTP errors, horizontal scrolling or active audio occurred in these tail checks.
+
+One final complete natural 390×844 touch run passed from Enter through both full videos, envelope, first invitation, NO, YES, meeting confirmation, Cha chaan teng, summary and ending. Both video starts were unmuted at zero within real user activation. The only two play calls belonged to the existing videos; no overlapping audio was observed. Summary held 3008 ms. Ending text began appearing at approximately 727, 1428 and 2326 ms after entry, matching the required 700 ms and 900 ms gaps. Final frame remained ended, background became clear, and no horizontal scrolling or page/console/HTTP errors occurred. No additional browser or complete playback run was performed.

@@ -4,8 +4,9 @@ import { Soundtrack } from './audio'
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
+const foodChoices = ['Japanese / Sushi', 'Cha chaan teng', 'Korean', 'Italian / Pasta', 'You choose for me']
 const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg']
-type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation'
+type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'ending'
 
 function useViewport() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -105,6 +106,10 @@ export function App() {
   const [celebrationEnded, setCelebrationEnded] = useState(false)
   const [meetingCopy, setMeetingCopy] = useState(0)
   const [meetingChoice, setMeetingChoice] = useState<'confirmed' | 'adjust' | null>(null)
+  const [meetingConfirmed, setMeetingConfirmed] = useState(false)
+  const [foodChoice, setFoodChoice] = useState<string | null>(null)
+  const [endingCopy, setEndingCopy] = useState(0)
+  const nextCard = useRef<HTMLElement>(null)
   const meetingCard = useRef<HTMLElement>(null)
   const track = useRef(new Soundtrack())
   const filmFinished = useRef(false)
@@ -134,6 +139,7 @@ export function App() {
   useEffect(() => {
     if (stage === 'invitation-card') card.current?.focus({ preventScroll: true })
     if (stage === 'meeting-confirmation') meetingCard.current?.focus({ preventScroll: true })
+    if (stage === 'food-choice' || stage === 'final-summary') nextCard.current?.focus({ preventScroll: true })
   }, [stage])
   useEffect(() => {
     if (stage !== 'envelope') return
@@ -164,6 +170,26 @@ export function App() {
     const timers = [1, 2, 3].map((line, i) => window.setTimeout(() => setMeetingCopy(line), reduced ? 100 : 350 + i * 650))
     return () => timers.forEach(clearTimeout)
   }, [stage, reduced])
+  useEffect(() => {
+    if (stage !== 'meeting-confirmation' || meetingChoice !== 'adjust') return
+    const timer = window.setTimeout(() => setStage('food-choice'), 1200)
+    return () => clearTimeout(timer)
+  }, [stage, meetingChoice])
+  useEffect(() => {
+    if (stage !== 'food-choice' || !foodChoice) return
+    const timer = window.setTimeout(() => setStage('final-summary'), 1000)
+    return () => clearTimeout(timer)
+  }, [stage, foodChoice])
+  useEffect(() => {
+    if (stage !== 'final-summary') return
+    const timer = window.setTimeout(() => setStage('ending'), 3000)
+    return () => clearTimeout(timer)
+  }, [stage])
+  useEffect(() => {
+    if (stage !== 'ending') return
+    const timers = [700, 1400, 2300].map((delay, i) => window.setTimeout(() => setEndingCopy(i + 1), delay))
+    return () => timers.forEach(clearTimeout)
+  }, [stage])
   useEffect(() => {
     const soundtrack = track.current
     const pauseMedia = () => {
@@ -236,7 +262,8 @@ export function App() {
     setStage('celebration-video')
   }
 
-  const celebrating = stage === 'celebration-video' || stage === 'meeting-confirmation'
+  const celebrating = ['celebration-video', 'meeting-confirmation', 'food-choice', 'final-summary', 'ending'].includes(stage)
+  const stationery = ['meeting-confirmation', 'food-choice', 'final-summary'].includes(stage)
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
   const opened = stage === 'opening' || stage === 'invitation-card'
@@ -323,7 +350,7 @@ export function App() {
         initial={false} animate={{ opacity: celebrating ? 1 : 0 }}
         transition={{ duration: reduced ? .15 : .4, delay: celebrating ? .2 : 0 }} style={{ pointerEvents: celebrating ? 'auto' : 'none' }}>
         <motion.div className="celebration-picture" initial={false}
-          animate={{ filter: stage === 'meeting-confirmation' ? w < 600 ? 'blur(5px) brightness(0.76)' : 'blur(6px) brightness(0.74)' : 'blur(0px) brightness(1)', scale: stage === 'meeting-confirmation' ? 1.01 : 1 }}
+          animate={{ filter: stationery ? w < 600 ? 'blur(5px) brightness(0.76)' : 'blur(6px) brightness(0.74)' : 'blur(0px) brightness(1)', scale: stationery ? 1.01 : 1 }}
           transition={{ duration: reduced ? .2 : 1.25 }}>
           <div className="celebration-fill" style={{ backgroundImage: `url(${media('celebration-poster.jpg')})` }} aria-hidden="true" />
           <video ref={celebration} className="celebration-video" playsInline preload="auto" poster={media('celebration-poster.jpg')}
@@ -347,19 +374,42 @@ export function App() {
           {celebrationFailed ? 'Try the celebration again' : celebrationEntered.current ? 'Resume' : 'Begin celebration'}
         </button>}
       </motion.section>
-      {stage === 'meeting-confirmation' && <motion.article ref={meetingCard} className="invitation-card meeting-card" style={{ ...paperEnd, top: (h - targetHeight) / 2, zIndex: 6 }} tabIndex={-1} aria-label="Meeting confirmation"
-        initial={{ opacity: 0, scale: .97, y: reduced ? 0 : 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: reduced ? .2 : .8 }}>
+      <AnimatePresence>
+      {stage === 'meeting-confirmation' && <motion.article key="meeting" ref={meetingCard} className="invitation-card meeting-card" style={{ ...paperEnd, top: (h - targetHeight) / 2, zIndex: 6 }} tabIndex={-1} aria-label="Meeting confirmation"
+        initial={{ opacity: 0, scale: .97, y: reduced ? 0 : 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -6 }} transition={{ duration: reduced ? .2 : .8 }}>
         <img className="paper" src={media('card.webp')} alt="" />
         <div className="invitation-copy meeting-copy">
           <motion.p className="meeting-introduction" animate={{ opacity: meetingCopy >= 1 ? 1 : 0, y: meetingCopy >= 1 ? 0 : 8 }} transition={{ duration: .8 }}>Just to make sure I’ve got it right…</motion.p>
           <motion.h1 animate={{ opacity: meetingCopy >= 2 ? 1 : 0, y: meetingCopy >= 2 ? 0 : 8 }} transition={{ duration: .8 }}>October 22, 12:00 PM —<br />Hong Kong Airport?</motion.h1>
           <motion.div className="meeting-answers" animate={{ opacity: meetingCopy >= 3 ? 1 : 0 }} transition={{ duration: .8 }} inert={meetingCopy < 3}>
-            <button className="answer yes-answer" disabled={meetingCopy < 3} aria-pressed={meetingChoice === 'confirmed'} onClick={() => setMeetingChoice('confirmed')}>Yes, see you then ♡</button>
-            <button className="answer" disabled={meetingCopy < 3} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let’s adjust it</button>
+            <button className="answer yes-answer" aria-pressed={meetingChoice === 'confirmed'} disabled={meetingCopy < 3 || meetingChoice !== null} onClick={() => { setMeetingConfirmed(true); setMeetingChoice('confirmed'); setStage('food-choice') }}>Yes, see you then ♡</button>
+            <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let’s adjust it</button>
           </motion.div>
-          <p className="meeting-status" role="status">{meetingChoice === 'confirmed' ? 'See you then ♡' : meetingChoice === 'adjust' ? 'We can adjust the details.' : ''}</p>
+          <p className="meeting-status" role="status" style={meetingChoice === 'adjust' ? { height: 40 } : undefined}>{meetingChoice === 'confirmed' ? 'See you then ♡' : meetingChoice === 'adjust' ? <>Of course —<br />we’ll figure it out together. ♡</> : ''}</p>
         </div>
       </motion.article>}
+      {(stage === 'food-choice' || stage === 'final-summary') && <motion.article key={stage} ref={nextCard} className="invitation-card meeting-card" style={{ ...paperEnd, top: (h - targetHeight) / 2, zIndex: 6 }} tabIndex={-1} aria-label={stage === 'food-choice' ? 'Food choice' : 'Our plans'}
+        initial={{ opacity: 0, scale: .97, y: reduced ? 0 : 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -6 }} transition={{ duration: reduced ? .2 : .8 }}>
+        <img className="paper" src={media('card.webp')} alt="" />
+        {stage === 'food-choice' ? <div className="invitation-copy food-copy">
+          <p className="meeting-introduction">Okay, one more very important question…</p>
+          <h1>What should we eat?</h1>
+          <div className="food-choices">
+            {foodChoices.map(choice => <button key={choice} className="answer" disabled={foodChoice !== null} aria-pressed={foodChoice === choice} onClick={() => setFoodChoice(choice)}>{choice}</button>)}
+          </div>
+          <motion.p className="dessert-note" role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodChoice ? 1 : 0, y: foodChoice ? 0 : 6 }} transition={{ duration: .4 }}>And maybe dessert after? :)</motion.p>
+        </div> : <div className="invitation-copy summary-copy">
+          <h1>October 22</h1>
+          <p>{meetingConfirmed ? '12:00 PM · Hong Kong Airport' : 'Hong Kong Airport · We’ll confirm the time together'}</p>
+          <p className="first-stop">First stop:<br /><span>{foodChoice === 'You choose for me' ? 'I’ll choose something good ♡' : foodChoice}</span></p>
+        </div>}
+      </motion.article>}
+      </AnimatePresence>
+      {stage === 'ending' && <div className="ending-copy" aria-live="polite">
+        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 1 ? 1 : 0, y: endingCopy >= 1 ? 0 : 10 }} transition={{ duration: .8 }}>That’s everything.</motion.p>
+        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 2 ? 1 : 0, y: endingCopy >= 2 ? 0 : 10 }} transition={{ duration: .8 }}>I’m really looking forward to seeing you.</motion.p>
+        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 3 ? 1 : 0, y: endingCopy >= 3 ? 0 : 10 }} transition={{ duration: .8 }}>See you on October 22, Colette. ♡</motion.p>
+      </div>}
 
     </main>
   </MotionConfig>
