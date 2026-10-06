@@ -2,47 +2,28 @@
 
 Live website: https://claire-13-huang.github.io/quiet-folk-site/
 
-Editable source repository: https://github.com/claire-13-huang/quiet-folk-site
+Editable source: https://github.com/claire-13-huang/quiet-folk-site
 
-A cinematic invitation for Colette. The existing opening film, interactive envelope and invitation lead into the approved celebration video, then meeting confirmation, food choice, a travel-note summary and the final farewell. Choices are kept in page state for the summary and are not transmitted or saved after leaving the page.
+A private invitation for Colette, from the cinematic entry and original opening film through envelope, getaway invitation, celebration, meeting confirmation, food choice, itinerary note and a hidden personal letter. Choices stay in page state and are not transmitted or persisted after leaving the page.
 
-## Local development
+## Development and publishing
 
-Requires Node.js 20.19+ or 22.12+.
+Requires Node.js 20.19+ or 22.12+. Run `npm ci`, then `npm run dev`. The app is served under `/quiet-folk-site/`. `npm run build` runs TypeScript checks and creates the production build; `npm run preview` serves it locally.
 
-```sh
-npm ci
-npm run dev
-```
+The public main branch stores editable source, runtime media, package manifests and configuration. Each push runs GitHub Actions to install locked dependencies, build and publish only dist to GitHub Pages. The Vite base preserves the public address. No application secrets or environment variables are required. Original masters and reference artwork remain outside the public tree.
 
-Open the printed address under `/quiet-folk-site/`.
+## Experience
 
-```sh
-npm run typecheck
-npm run build
-npm run preview
-```
+Come in starts the inline opening video from zero with its unchanged embedded audio, while entry text fades and the initial blur clears. The final half-second introduces the existing sealed-envelope artwork as the bridge into the desk scene. The understated prompt opens the envelope; the card stays blank throughout extraction, then reveals the revised getaway invitation line by line. The second choice retains its bounded evasive behavior.
 
-## Source and publishing
+Two quiet CC0 paper recordings accompany envelope opening and card sliding. They preload, decode after the entry gesture and use the browser's native Web Audio API without an added library. A single audio owner stops paper sources before either video starts. Both videos keep their original embedded audio; leaving the tab pauses playback and Resume continues the same position. Source and reuse details are in AUDIO_SOURCES.md.
 
-The public repository's `main` branch contains `src/`, `public/media/`, package manifests, TypeScript/Vite configuration and `.github/workflows/pages.yml`. It stores editable source rather than copied build output.
+Celebration title timing follows video duration minus 4.5 seconds, with the second line 700 ms later and a final 300 ms fade. The video is unchanged. After its ending hold, a stable source frame from 10.9 seconds replaces the ended video for subsequent cards, with shallow blur, brightness 0.72 and a slow scale to 1.015. Portrait framing preserves all four faces.
 
-Each push to `main` runs GitHub Actions: install locked dependencies, typecheck and build, then publish only `dist/` to GitHub Pages. Pages uses GitHub Actions as its publishing source. The Vite base is `/quiet-folk-site/`, preserving the existing public address. No secrets or environment variables are required.
+Meeting and food retain the approved centered stationery geometry. Food heading and option rows reveal progressively. Selection shows the dessert line and proceeds after one second. The smaller itinerary note summarizes confirmed or flexible meeting time and selected food; Let's decide later resolves to We'll decide together ♡.
 
-## Media and interaction
+After 1.2 seconds, a small existing-style envelope peeks from behind the itinerary's lower-right edge. The summary stays until it is opened. The note moves to center and opens into an HTML letter, revealed paragraph by paragraph. A quiet See you soon. ♡ follows the signature. The letter supports contained scrolling when needed. No large ending message, extra question or Replay control is added.
 
-`public/media/` contains the opening/scene assets and the H.264 celebration delivery video with its first-frame poster. Original high-resolution artwork and reference sheets remain outside the public source tree. No visual assets are regenerated. The opening file retains the existing web video stream and the original embedded AAC audio stream, both copied without re-encoding.
+Cormorant Garamond and EB Garamond are self-hosted with their SIL Open Font License notices and serif fallbacks. Visuals are existing artwork or direct frame extractions; no artwork is regenerated.
 
-The opening waits on its poster for Enter. A click or tap starts the same inline video from zero with its original embedded audio, without a separate soundtrack. Playback restrictions keep the entry available for another gesture. Leaving the tab pauses playback; Resume continues the same video at its existing position. Device volume remains under the visitor’s control. Scene 02 images decode in advance. The envelope opens using layered imagery and card extraction; copy appears line by line. YES stays fixed. NO moves within the viewport for mouse and touch users; keyboard and reduced-motion users can decline normally.
-
-The optional audio channels in `src/audio.ts` remain silent when no sound files are configured. Audio unlocks only after user interaction.
-
-YES starts the already-preloaded celebration video with its original embedded AAC audio. Its HEVC master remains untouched; only the picture is converted to H.264 at 1920×1080, 30 fps, CRF 20 and yuv420p with faststart. The AAC stream is copied unchanged. The media owner in `src/audio.ts` pauses other sources before video playback, preventing overlapping audio and reserving the same rule for future sound channels.
-
-Celebration text follows the video clock at duration minus 4.5 seconds and 700 ms later, then fades near the end. The actual final video frame remains mounted for 400 ms before becoming a shallow-focus background. The meeting card reuses the existing paper artwork and shows the exact airport/date confirmation. Confirming saves the meeting choice; adjusting briefly shows the reassuring two-line response. Both lead to food choice, using the identical centered card geometry and celebration-room background.
-
-Portrait celebration framing contains the entire 16:9 picture, with a soft fill outside it. The title is centered above the portrait picture. The meeting card reuses the original invitation dimensions at each viewport and is centered horizontally and vertically over the held celebration frame.
-
-Verification evidence is summarized in QA.md. Local screenshots and tooling output are excluded from publication.
-
-Food choice offers five text options, in two columns on desktop and one on mobile. Selection locks the choices, reveals the dessert line, then continues after one second. The summary combines the confirmed or flexible airport time with the selected first stop; choosing for her shows the exact personal alternative. After three seconds, the card fades away, the same final celebration frame gradually clears, and three centered farewell lines appear in sequence. No extra audio, media, question, form or Replay control is added.
+Acceptance evidence is recorded in QA.md. Screenshots, raw downloads and local tooling remain excluded from publication.

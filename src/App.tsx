@@ -4,9 +4,19 @@ import { Soundtrack } from './audio'
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
-const foodChoices = ['Japanese / Sushi', 'Cha chaan teng', 'Korean', 'Italian / Pasta', 'You choose for me']
-const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg']
-type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'ending'
+const foodChoices = ['Japanese / Sushi', 'Cha chaan teng', 'Korean', 'Italian / Pasta', "Let's decide later"]
+const letterParagraphs = [
+  'One more thing.',
+  "I'm really looking forward to seeing you —\nand, honestly, I'm a little nervous too.",
+  "I haven't planned every detail perfectly,\nand part of me is probably more worried than I should be\nabout getting everything right.",
+  "So if you ever feel tired, don't feel well,\nor simply want to change the plan,\nplease tell me.",
+  'We can slow down, change things,\nor do absolutely nothing for a while.\nYou never have to stick to a plan\njust because it was “the plan.”',
+  "I think what I'm looking forward to most\nisn't getting every detail right.",
+  "It's simply getting to spend those few days with you.",
+  '— Claire',
+]
+const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg', 'celebration-room.jpg', 'sealed.webp']
+type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'hidden-letter'
 
 function useViewport() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -58,7 +68,7 @@ function Answers({ onYes, reduced, active }: { onYes: () => void; reduced: boole
   }, [evade, active])
   const [declined, setDeclined] = useState(false)
   return <div className="answers">
-    <button ref={yes} className="answer yes-answer" disabled={!active} onClick={onYes}>Yes, I'd love to</button>
+    <button ref={yes} className="answer yes-answer" disabled={!active} onClick={onYes}>Yes — it's a date ♡</button>
     <motion.button ref={no} className="answer no-answer" disabled={!active} animate={offset}
       transition={{ type: 'tween', duration: reduced ? 0 : 0.55, ease }}
       onPointerDown={event => {
@@ -69,7 +79,7 @@ function Answers({ onYes, reduced, active }: { onYes: () => void; reduced: boole
         // Keyboard and reduced-motion users can decline without chasing a control.
         if (event.detail === 0 || reduced) setDeclined(true)
         else evade()
-      }}>No</motion.button>
+      }}>Let me think…</motion.button>
     <span className="decline-note" role="status">{declined ? 'Take your time.' : ''}</span>
   </div>
 }
@@ -108,7 +118,12 @@ export function App() {
   const [meetingChoice, setMeetingChoice] = useState<'confirmed' | 'adjust' | null>(null)
   const [meetingConfirmed, setMeetingConfirmed] = useState(false)
   const [foodChoice, setFoodChoice] = useState<string | null>(null)
-  const [endingCopy, setEndingCopy] = useState(0)
+  const [letterCopy, setLetterCopy] = useState(0)
+  const [foodCopy, setFoodCopy] = useState(0)
+  const [postFrameReady, setPostFrameReady] = useState(false)
+  const [noteReady, setNoteReady] = useState(false)
+  const [matchEnvelope, setMatchEnvelope] = useState(false)
+  const letterCard = useRef<HTMLElement>(null)
   const nextCard = useRef<HTMLElement>(null)
   const meetingCard = useRef<HTMLElement>(null)
   const track = useRef(new Soundtrack())
@@ -122,6 +137,7 @@ export function App() {
 
   useEffect(() => {
     let active = true
+    void track.current.preload().catch(error => console.warn('Paper audio preload failed', error))
     const images = sceneFiles.map(file => new Promise<void>((resolve, reject) => {
       const image = new Image()
       image.onload = () => image.decode().then(resolve, reject)
@@ -140,16 +156,17 @@ export function App() {
     if (stage === 'invitation-card') card.current?.focus({ preventScroll: true })
     if (stage === 'meeting-confirmation') meetingCard.current?.focus({ preventScroll: true })
     if (stage === 'food-choice' || stage === 'final-summary') nextCard.current?.focus({ preventScroll: true })
+    if (stage === 'hidden-letter') letterCard.current?.focus({ preventScroll: true })
   }, [stage])
   useEffect(() => {
     if (stage !== 'envelope') return
-    const timer = window.setTimeout(() => setHandoffReady(true), reduced ? 200 : 2000)
+    const timer = window.setTimeout(() => setHandoffReady(true), reduced ? 200 : 400)
     return () => clearTimeout(timer)
   }, [stage, reduced])
   useEffect(() => {
     if (stage !== 'opening') return
     const timers = [
-      window.setTimeout(() => setExtract(true), reduced ? 50 : 650),
+      window.setTimeout(() => { setExtract(true); track.current.play('slide') }, reduced ? 50 : 650),
       window.setTimeout(() => setRaised(true), reduced ? 75 : 1750),
       window.setTimeout(() => setStage('invitation-card'), reduced ? 150 : 3150),
     ]
@@ -157,7 +174,7 @@ export function App() {
   }, [stage, reduced])
   useEffect(() => {
     if (stage !== 'invitation-card') return
-    const timers = [1, 2, 3, 4].map((line, i) => window.setTimeout(() => setCopy(line), reduced ? 0 : 350 + i * 900))
+    const timers = [1, 2, 3, 4, 5].map((line, i) => window.setTimeout(() => setCopy(line), reduced ? 0 : 350 + i * 900))
     return () => timers.forEach(clearTimeout)
   }, [stage, reduced])
   useEffect(() => {
@@ -181,13 +198,19 @@ export function App() {
     return () => clearTimeout(timer)
   }, [stage, foodChoice])
   useEffect(() => {
+    if (stage !== 'food-choice') return
+    const timers = [0, 500, 1100, 1650, 2200].map((delay, i) => window.setTimeout(() => setFoodCopy(i + 1), reduced ? 0 : delay))
+    return () => timers.forEach(clearTimeout)
+  }, [stage, reduced])
+  useEffect(() => {
     if (stage !== 'final-summary') return
-    const timer = window.setTimeout(() => setStage('ending'), 3000)
+    const timer = window.setTimeout(() => setNoteReady(true), 1200)
     return () => clearTimeout(timer)
   }, [stage])
   useEffect(() => {
-    if (stage !== 'ending') return
-    const timers = [700, 1400, 2300].map((delay, i) => window.setTimeout(() => setEndingCopy(i + 1), delay))
+    if (stage !== 'hidden-letter') return
+    const timers = [1, 2, 3, 4, 5, 6, 7, 8].map((line, i) => window.setTimeout(() => setLetterCopy(line), 1000 + i * 650))
+    timers.push(window.setTimeout(() => setLetterCopy(9), 1000 + 7 * 650 + 1000))
     return () => timers.forEach(clearTimeout)
   }, [stage])
   useEffect(() => {
@@ -214,6 +237,7 @@ export function App() {
     if (!element || playPending.current) return
     if (videoFailed) { if (assetsReady) beginEnvelope(); return }
     playPending.current = true
+    track.current.unlock()
     track.current.claimVideo(element)
     setFilmStarting(true)
     // Keep play() inside this gesture, on the existing inline video element.
@@ -262,8 +286,13 @@ export function App() {
     setStage('celebration-video')
   }
 
-  const celebrating = ['celebration-video', 'meeting-confirmation', 'food-choice', 'final-summary', 'ending'].includes(stage)
-  const stationery = ['meeting-confirmation', 'food-choice', 'final-summary'].includes(stage)
+  const celebrating = ['celebration-video', 'meeting-confirmation', 'food-choice', 'final-summary', 'hidden-letter'].includes(stage)
+  const stationery = ['meeting-confirmation', 'food-choice', 'final-summary', 'hidden-letter'].includes(stage)
+  useEffect(() => {
+    if (!stationery) return
+    const timer = window.setTimeout(() => setPostFrameReady(true), 600)
+    return () => clearTimeout(timer)
+  }, [stationery])
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
   const opened = stage === 'opening' || stage === 'invitation-card'
@@ -275,7 +304,7 @@ export function App() {
   const targetHeight = w < 600 ? Math.min(438, h - 64) : targetWidth / 1.85
   const paperStart = { left: planeX + planeW * 0.328, top: planeY + planeH * 0.269, width: startWidth, height: startWidth / 1.85 }
   const paperEnd = { left: (w - targetWidth) / 2, top: (h - targetHeight) / 2 - Math.min(25, h * .025), width: targetWidth, height: targetHeight }
-  const reveal = (line: number) => ({ opacity: copy >= line ? 1 : 0, y: copy >= line || reduced ? 0 : 9 })
+  const reveal = (line: number) => ({ opacity: stage === 'invitation-card' && copy >= line ? 1 : 0, y: copy >= line || reduced ? 0 : 9 })
   const openEnvelope = () => {
     if (stage !== 'envelope' || !assetsReady || !handoffReady) return
     track.current.unlock(); track.current.play('paper'); setStage('opening')
@@ -286,34 +315,44 @@ export function App() {
       <motion.div className="room-fill" aria-hidden="true" animate={{ filter: extract ? 'blur(25px) brightness(0.42)' : 'blur(25px) brightness(0.62)' }} transition={{ duration: reduced ? .2 : 2, delay: extract ? .4 : 0 }} />
       <motion.div className="room" style={{ width: planeW, height: planeH, left: planeX, top: planeY, transformOrigin: '53.7% 58.3%' }}
         initial={false}
-        animate={{ x: stage === 'film' && !reduced ? -planeW * .032 : 0, y: stage === 'film' && !reduced ? -planeH * .036 : 0, scale: stage === 'film' && !reduced ? 1.5 : pressed ? .991 : 1, filter: extract && !celebrating ? 'blur(12px) brightness(0.42)' : 'blur(0px) brightness(1)' }}
-        transition={{ duration: reduced ? .2 : celebrating ? .4 : 2, delay: extract && !celebrating ? .4 : 0, x: { duration: reduced ? .2 : 2 }, y: { duration: reduced ? .2 : 2 }, scale: { duration: reduced ? .2 : stage === 'envelope' && !handoffReady ? 2 : .18 } }}>
+        animate={{ x: stage === 'film' && !matchEnvelope && !reduced ? -planeW * .032 : 0, y: stage === 'film' && !matchEnvelope && !reduced ? -planeH * .036 : 0, scale: stage === 'film' && !matchEnvelope && !reduced ? 1.5 : pressed ? .991 : 1, filter: extract && !celebrating ? 'blur(12px) brightness(0.42)' : 'blur(0px) brightness(1)' }}
+        transition={{ duration: reduced ? .2 : matchEnvelope ? .85 : celebrating ? .4 : 2, delay: extract && !celebrating ? .4 : 0, x: { duration: reduced ? .2 : matchEnvelope ? .85 : 2 }, y: { duration: reduced ? .2 : matchEnvelope ? .85 : 2 }, scale: { duration: reduced ? .2 : matchEnvelope && !handoffReady ? .85 : .18 } }}>
         <img className="room-image" src={media('closed.webp')} alt="" />
         <motion.img className="room-image" src={media('open.webp')} alt="" initial={{ opacity: 0 }}
           animate={{ opacity: opened ? 1 : 0 }} transition={{ duration: reduced ? .15 : .8 }} />
       </motion.div>
       <div className="vignette" aria-hidden="true" />
       <AnimatePresence>
-        {stage === 'film' && <motion.div className="film" key="film" initial={false} exit={{ opacity: 0 }}
-          transition={{ duration: reduced ? .2 : 1.25 }}>
-          <video ref={video} playsInline preload="auto" poster={media('poster.webp')}
+        {stage === 'film' && <motion.div className="film" key="film" initial={false} animate={{ opacity: matchEnvelope ? 0 : 1 }} exit={{ opacity: 0, transition: { duration: reduced ? .2 : .35 } }}
+          transition={{ duration: reduced ? .2 : .85 }}>
+          <motion.video ref={video} playsInline preload="auto" poster={media('poster.webp')}
             style={{ width: planeW, height: planeH, left: planeX, top: planeY }}
+            initial={{ filter: 'blur(80px) brightness(0.5)', scale: 1.08 }}
+            animate={{ filter: filmEntered ? 'blur(0px) brightness(1)' : 'blur(80px) brightness(0.5)', scale: filmEntered ? 1 : 1.08 }} transition={{ duration: 1.4 }}
+            onTimeUpdate={() => { const element = video.current; if (element && assetsReady && element.duration - element.currentTime <= .5) setMatchEnvelope(true) }}
             onPause={() => { if (entered.current && !filmFinished.current && !video.current?.ended) setPlayBlocked(true) }}
             onEnded={() => { filmFinished.current = true; if (assetsReady) beginEnvelope() }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
+          <AnimatePresence>{!filmEntered && <motion.p key="entry-copy" className="entry-copy" initial={false} exit={{ opacity: 0 }} animate={{ opacity: filmStarting ? 0 : 1 }} transition={{ duration: .5 }}>I made something for you, Colette.</motion.p>}</AnimatePresence>
           {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className="film-start" disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
-            {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Enter'}
+            {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
           </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}
         </motion.div>}
       </AnimatePresence>
+      <AnimatePresence>
+        {matchEnvelope && !handoffReady && <motion.img key="match-envelope" className="match-envelope" src={media('sealed.webp')} alt=""
+          initial={{ left: planeX + planeW * .23, top: planeY + planeH * .29 - planeW * .55 * .129, width: planeW * .55, opacity: 0 }}
+          animate={{ left: planeX + planeW * .335, top: planeY + planeH * .4 - planeW * .4 * .129, width: planeW * .4, opacity: 1 }}
+          exit={{ opacity: 0 }} transition={{ duration: reduced ? .2 : .85, opacity: { duration: .25 } }} />}
+      </AnimatePresence>
       {stage === 'envelope' && <>
         <motion.button ref={openButton} className="envelope-hit" disabled={!handoffReady} aria-label="Open your invitation"
           style={{ left: planeX + planeW * .335, top: planeY + planeH * .40, width: planeW * .40, height: planeH * .365 }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: reduced ? .2 : 2 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: reduced ? .2 : .4 }}
           onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerCancel={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onClick={openEnvelope} />
         <motion.p className="open-hint" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-          style={{ top: Math.min(h - 65, planeY + planeH * .82) }} transition={{ duration: .9, delay: reduced ? .2 : 2.15 }}>Open me</motion.p>
+          style={{ top: Math.min(h - 65, planeY + planeH * .82) }} transition={{ duration: .9, delay: reduced ? .2 : .55 }}>Whenever you're ready.</motion.p>
       </>}
       <AnimatePresence>
       {opened && <>
@@ -329,12 +368,13 @@ export function App() {
           animate={stage === 'invitation-card' ? { ...paperEnd, opacity: 1, rotate: 0 } : extract ? { left: [paperStart.left, paperStart.left, paperEnd.left], top: [paperStart.top, planeY + planeH * .41 - paperStart.height - 18, paperEnd.top], width: [paperStart.width, paperStart.width, paperEnd.width], height: [paperStart.height, paperStart.height, paperEnd.height], opacity: 1, rotate: [-1, -1, 0] } : { ...paperStart, opacity: 1, rotate: -1 }}
           transition={{ duration: reduced ? .15 : stage === 'opening' ? 2.4 : .45, times: [0, .44, 1], ease, opacity: { duration: celebrating ? .35 : .6 }, scale: { duration: .35 }, rotate: { duration: 1.8 } }}>
           <img className="paper" src={media('card.webp')} alt="" />
-          <div className="invitation-copy" aria-hidden={stage !== 'invitation-card'}>
-            <motion.p className="salutation" animate={reveal(1)} transition={{ duration: reduced ? .1 : .9 }}>For Colette</motion.p>
-            <motion.p className="introduction" animate={reveal(2)} transition={{ duration: reduced ? .1 : .9 }}>I've been meaning to ask you something.</motion.p>
-            <motion.h1 animate={reveal(3)} transition={{ duration: reduced ? .1 : 1 }}>Would you like to go<br className="desktop-break" /> on a date with me?</motion.h1>
-            <motion.div initial={false} animate={{ opacity: copy >= 4 && stage === 'invitation-card' ? 1 : 0, y: copy >= 4 || reduced ? 0 : 6 }} transition={{ duration: .8 }} aria-hidden={copy < 4 || stage !== 'invitation-card'} inert={copy < 4 || stage !== 'invitation-card'}>
-              <Answers reduced={reduced} active={copy >= 4 && stage === 'invitation-card'} onYes={playCelebration} />
+          <div className="invitation-copy" style={{ visibility: stage === 'invitation-card' ? 'visible' : 'hidden' }} aria-hidden={stage !== 'invitation-card'}>
+            <motion.p className="salutation" initial={{ opacity: 0 }} animate={reveal(1)} transition={{ duration: reduced ? .1 : .9 }}>For Colette</motion.p>
+            <motion.p className="introduction" initial={{ opacity: 0 }} animate={reveal(2)} transition={{ duration: reduced ? .1 : .9 }}>I know we're already going…</motion.p>
+            <motion.p className="introduction invitation-properly" initial={{ opacity: 0 }} animate={reveal(3)} transition={{ duration: reduced ? .1 : .9 }}>but I still wanted to ask properly.</motion.p>
+            <motion.h1 initial={{ opacity: 0 }} animate={reveal(4)} transition={{ duration: reduced ? .1 : 1 }}>Will you make these few days in Hong Kong<br />our little getaway?</motion.h1>
+            <motion.div initial={false} animate={{ opacity: copy >= 5 && stage === 'invitation-card' ? 1 : 0, y: copy >= 5 || reduced ? 0 : 6 }} transition={{ duration: .8 }} aria-hidden={copy < 5 || stage !== 'invitation-card'} inert={copy < 5 || stage !== 'invitation-card'}>
+              <Answers reduced={reduced} active={copy >= 5 && stage === 'invitation-card'} onYes={playCelebration} />
             </motion.div>
           </div>
         </motion.article>
@@ -350,10 +390,10 @@ export function App() {
         initial={false} animate={{ opacity: celebrating ? 1 : 0 }}
         transition={{ duration: reduced ? .15 : .4, delay: celebrating ? .2 : 0 }} style={{ pointerEvents: celebrating ? 'auto' : 'none' }}>
         <motion.div className="celebration-picture" initial={false}
-          animate={{ filter: stationery ? w < 600 ? 'blur(5px) brightness(0.76)' : 'blur(6px) brightness(0.74)' : 'blur(0px) brightness(1)', scale: stationery ? 1.01 : 1 }}
-          transition={{ duration: reduced ? .2 : 1.25 }}>
+          animate={{ filter: stationery ? w < 600 ? 'blur(5px) brightness(0.72)' : 'blur(6px) brightness(0.72)' : 'blur(0px) brightness(1)', scale: stationery ? 1.015 : 1 }}
+          transition={{ duration: reduced ? .2 : 1.25, scale: { duration: reduced ? .2 : 24, ease: 'linear' } }}>
           <div className="celebration-fill" style={{ backgroundImage: `url(${media('celebration-poster.jpg')})` }} aria-hidden="true" />
-          <video ref={celebration} className="celebration-video" playsInline preload="auto" poster={media('celebration-poster.jpg')}
+          <video ref={celebration} className="celebration-video" style={{ visibility: postFrameReady ? 'hidden' : 'visible', opacity: stationery ? 0 : 1, transition: 'opacity .6s' }} playsInline preload="auto" poster={media('celebration-poster.jpg')}
             src={media('celebration-web.mp4')}
             onLoadedMetadata={() => setCelebrationDuration(celebration.current?.duration ?? 0)}
             onTimeUpdate={() => setCelebrationTime(celebration.current?.currentTime ?? 0)}
@@ -365,10 +405,11 @@ export function App() {
               setCelebrationEnded(true)
             }}
             onError={() => { setCelebrationFailed(true); setCelebrationBlocked(true) }} />
+          <motion.img className="post-celebration-image" src={media('celebration-room.jpg')} alt="" initial={false} animate={{ opacity: stationery ? 1 : 0 }} transition={{ duration: .6 }} />
         </motion.div>
         {stage === 'celebration-video' && <div className="celebration-copy" aria-live="polite">
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: titleVisible && celebrationTime >= titleStart ? 1 : 0, y: celebrationTime >= titleStart ? 0 : 10 }} transition={{ duration: titleVisible ? .8 : .3 }}>Thank you for saying yes.</motion.p>
-          <motion.p className="celebration-next" initial={{ opacity: 0, y: 10 }} animate={{ opacity: titleVisible && celebrationTime >= titleStart + .7 ? 1 : 0, y: celebrationTime >= titleStart + .7 ? 0 : 10 }} transition={{ duration: titleVisible ? .8 : .3 }}>Now let me make sure I’ve got the rest right.</motion.p>
+          <motion.p className="celebration-next" initial={{ opacity: 0, y: 10 }} animate={{ opacity: titleVisible && celebrationTime >= titleStart + .7 ? 1 : 0, y: celebrationTime >= titleStart + .7 ? 0 : 10 }} transition={{ duration: titleVisible ? .8 : .3 }}>Now let me make sure I've got the rest right.</motion.p>
         </div>}
         {stage === 'celebration-video' && celebrationBlocked && !celebrationEnded && <button className="film-start celebration-resume" disabled={celebrationStarting} onClick={playCelebration}>
           {celebrationFailed ? 'Try the celebration again' : celebrationEntered.current ? 'Resume' : 'Begin celebration'}
@@ -379,37 +420,51 @@ export function App() {
         initial={{ opacity: 0, scale: .97, y: reduced ? 0 : 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -6 }} transition={{ duration: reduced ? .2 : .8 }}>
         <img className="paper" src={media('card.webp')} alt="" />
         <div className="invitation-copy meeting-copy">
-          <motion.p className="meeting-introduction" animate={{ opacity: meetingCopy >= 1 ? 1 : 0, y: meetingCopy >= 1 ? 0 : 8 }} transition={{ duration: .8 }}>Just to make sure I’ve got it right…</motion.p>
+          <motion.p className="meeting-introduction" animate={{ opacity: meetingCopy >= 1 ? 1 : 0, y: meetingCopy >= 1 ? 0 : 8 }} transition={{ duration: .8 }}>Just to make sure I've got it right…</motion.p>
           <motion.h1 animate={{ opacity: meetingCopy >= 2 ? 1 : 0, y: meetingCopy >= 2 ? 0 : 8 }} transition={{ duration: .8 }}>October 22, 12:00 PM —<br />Hong Kong Airport?</motion.h1>
           <motion.div className="meeting-answers" animate={{ opacity: meetingCopy >= 3 ? 1 : 0 }} transition={{ duration: .8 }} inert={meetingCopy < 3}>
             <button className="answer yes-answer" aria-pressed={meetingChoice === 'confirmed'} disabled={meetingCopy < 3 || meetingChoice !== null} onClick={() => { setMeetingConfirmed(true); setMeetingChoice('confirmed'); setStage('food-choice') }}>Yes, see you then ♡</button>
-            <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let’s adjust it</button>
+            <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let's adjust it</button>
           </motion.div>
           <p className="meeting-status" role="status" style={meetingChoice === 'adjust' ? { height: 40 } : undefined}>{meetingChoice === 'confirmed' ? 'See you then ♡' : meetingChoice === 'adjust' ? <>Of course —<br />we’ll figure it out together. ♡</> : ''}</p>
         </div>
       </motion.article>}
-      {(stage === 'food-choice' || stage === 'final-summary') && <motion.article key={stage} ref={nextCard} className="invitation-card meeting-card" style={{ ...paperEnd, top: (h - targetHeight) / 2, zIndex: 6 }} tabIndex={-1} aria-label={stage === 'food-choice' ? 'Food choice' : 'Our plans'}
+      {(stage === 'food-choice' || stage === 'final-summary') && <motion.article key={stage} ref={nextCard} className="invitation-card meeting-card" style={{ ...paperEnd, width: targetWidth * (stage === 'final-summary' ? .86 : 1), height: targetHeight * (stage === 'final-summary' ? .86 : 1), left: (w - targetWidth * (stage === 'final-summary' ? .86 : 1)) / 2, top: (h - targetHeight * (stage === 'final-summary' ? .86 : 1)) / 2, zIndex: 6 }} tabIndex={-1} aria-label={stage === 'food-choice' ? 'Food choice' : 'Our plans'}
         initial={{ opacity: 0, scale: .97, y: reduced ? 0 : 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -6 }} transition={{ duration: reduced ? .2 : .8 }}>
         <img className="paper" src={media('card.webp')} alt="" />
         {stage === 'food-choice' ? <div className="invitation-copy food-copy">
-          <p className="meeting-introduction">Okay, one more very important question…</p>
-          <h1>What should we eat?</h1>
+          <motion.p className="meeting-introduction" initial={{ opacity: 0 }} animate={{ opacity: foodCopy >= 1 ? 1 : 0 }} transition={{ duration: .6 }}>Okay, one more very important question…</motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodCopy >= 2 ? 1 : 0, y: foodCopy >= 2 ? 0 : 6 }} transition={{ duration: .6 }}>What should we eat?</motion.h1>
           <div className="food-choices">
-            {foodChoices.map(choice => <button key={choice} className="answer" disabled={foodChoice !== null} aria-pressed={foodChoice === choice} onClick={() => setFoodChoice(choice)}>{choice}</button>)}
+            {foodChoices.map((choice, i) => <motion.button key={choice} className="answer" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodCopy >= 3 + Math.floor(i / 2) ? 1 : 0, y: foodCopy >= 3 + Math.floor(i / 2) ? 0 : 6 }} transition={{ duration: .6 }} disabled={foodChoice !== null || foodCopy < 3 + Math.floor(i / 2)} aria-pressed={foodChoice === choice} onClick={() => setFoodChoice(choice)}>{choice}</motion.button>)}
           </div>
           <motion.p className="dessert-note" role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodChoice ? 1 : 0, y: foodChoice ? 0 : 6 }} transition={{ duration: .4 }}>And maybe dessert after? :)</motion.p>
         </div> : <div className="invitation-copy summary-copy">
           <h1>October 22</h1>
           <p>{meetingConfirmed ? '12:00 PM · Hong Kong Airport' : 'Hong Kong Airport · We’ll confirm the time together'}</p>
-          <p className="first-stop">First stop:<br /><span>{foodChoice === 'You choose for me' ? 'I’ll choose something good ♡' : foodChoice}</span></p>
+          <p className="first-stop">First stop:<br /><span>{foodChoice === "Let's decide later" ? "We'll decide together ♡" : foodChoice}</span></p>
         </div>}
       </motion.article>}
       </AnimatePresence>
-      {stage === 'ending' && <div className="ending-copy" aria-live="polite">
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 1 ? 1 : 0, y: endingCopy >= 1 ? 0 : 10 }} transition={{ duration: .8 }}>That’s everything.</motion.p>
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 2 ? 1 : 0, y: endingCopy >= 2 ? 0 : 10 }} transition={{ duration: .8 }}>I’m really looking forward to seeing you.</motion.p>
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: endingCopy >= 3 ? 1 : 0, y: endingCopy >= 3 ? 0 : 10 }} transition={{ duration: .8 }}>See you on October 22, Colette. ♡</motion.p>
-      </div>}
+      {stage === 'final-summary' && <motion.button className="hidden-note" aria-label="One more thing" disabled={!noteReady}
+        style={{ left: Math.min(w - 166, (w + targetWidth * .86) / 2 - 78), top: (h + targetHeight * .86) / 2 - targetHeight * .086 - 72 }}
+        initial={{ opacity: 0, y: -24 }} animate={{ opacity: noteReady ? 1 : 0, y: noteReady ? 18 : -24 }} whileHover={{ y: 12 }} transition={{ duration: 1.2 }}
+        onClick={() => { track.current.unlock(); track.current.play('paper'); setStage('hidden-letter') }}>
+        <img src={media('sealed.webp')} alt="" /><span>One more thing.</span>
+      </motion.button>}
+      {stage === 'hidden-letter' && <>
+        <motion.div className="letter-envelope" initial={{ left: Math.min(w - 166, (w + targetWidth * .86) / 2 - 78), top: (h + targetHeight * .86) / 2 - targetHeight * .086 - 54, width: 150, opacity: 1 }} animate={{ left: (w - 260) / 2, top: h / 2 - 110, width: 260, opacity: [1, 1, 0] }} transition={{ duration: 1.25, opacity: { times: [0, .7, 1] } }} aria-hidden="true">
+          <motion.img src={media('sealed.webp')} alt="" animate={{ opacity: [1, 1, 0], rotateX: [0, 0, 65] }} transition={{ duration: 1, times: [0, .5, 1] }} />
+          <motion.img src={media('envelope.webp')} alt="" initial={{ opacity: 0 }} animate={{ opacity: [0, 0, 1] }} transition={{ duration: 1, times: [0, .5, 1] }} />
+        </motion.div>
+        <motion.article ref={letterCard} className="private-letter" tabIndex={-1} aria-label="A letter from Claire" initial={{ opacity: 0, y: 16, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .8, delay: .9 }}>
+          <div className="letter-paper" aria-hidden="true" style={{ backgroundImage: `url(${media('card.webp')})` }} />
+          <div className="letter-scroll">
+            {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 7 ? 'letter-signature' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
+            <motion.p className="letter-farewell" initial={{ opacity: 0 }} animate={{ opacity: letterCopy >= 9 ? 1 : 0 }} transition={{ duration: .6 }}>See you soon. ♡</motion.p>
+          </div>
+        </motion.article>
+      </>}
 
     </main>
   </MotionConfig>
