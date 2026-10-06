@@ -31,9 +31,9 @@ Each push to `main` runs GitHub Actions: install locked dependencies, typecheck 
 
 ## Media and interaction
 
-`public/media/` contains the six runtime delivery assets. Original high-resolution artwork and reference sheets remain in the private archive and are not part of the public source tree. No visual assets were regenerated during this migration.
+`public/media/` contains the six runtime delivery assets. Original high-resolution artwork and reference sheets remain in the private archive and are not part of the public source tree. No visual assets are regenerated. The opening file retains the existing web video stream and the original embedded AAC audio stream, both copied without re-encoding.
 
-The opening video plays silently inline with a poster and preloading. Scene 02 images decode in advance. The envelope opens using layered imagery and card extraction; copy appears line by line. YES stays fixed. NO moves within the viewport for mouse and touch users; keyboard and reduced-motion users can decline normally.
+The opening waits on its poster for Enter. A click or tap starts the same inline video from zero with its original embedded audio, without a separate soundtrack. Playback restrictions keep the entry available for another gesture. Leaving the tab pauses playback; Resume continues the same video at its existing position. Device volume remains under the visitor’s control. Scene 02 images decode in advance. The envelope opens using layered imagery and card extraction; copy appears line by line. YES stays fixed. NO moves within the viewport for mouse and touch users; keyboard and reduced-motion users can decline normally.
 
 The optional audio channels in `src/audio.ts` remain silent when no sound files are configured. Audio unlocks only after user interaction.
 

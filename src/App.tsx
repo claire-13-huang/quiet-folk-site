@@ -80,6 +80,10 @@ export function App() {
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
   const [playBlocked, setPlayBlocked] = useState(false)
+  const [filmEntered, setFilmEntered] = useState(false)
+  const [filmStarting, setFilmStarting] = useState(false)
+  const entered = useRef(false)
+  const playPending = useRef(false)
   const [videoFailed, setVideoFailed] = useState(false)
   const [handoffReady, setHandoffReady] = useState(false)
   const [pressed, setPressed] = useState(false)
@@ -111,13 +115,8 @@ export function App() {
     return () => { active = false }
   }, [])
   useEffect(() => {
-    if (assetsReady && (filmFinished.current || videoFailed)) beginEnvelope()
-  }, [assetsReady, videoFailed, beginEnvelope])
-  useEffect(() => {
-    const element = video.current
-    if (!element) return
-    void element.play().catch(() => setPlayBlocked(true))
-  }, [])
+    if (assetsReady && filmFinished.current) beginEnvelope()
+  }, [assetsReady, beginEnvelope])
   useEffect(() => {
     if (stage === 'card') card.current?.focus({ preventScroll: true })
     if (stage === 'yes') yesHeading.current?.focus({ preventScroll: true })
@@ -143,13 +142,48 @@ export function App() {
   }, [stage, reduced])
   useEffect(() => {
     const soundtrack = track.current
-    const visibility = () => {
-      if (document.hidden) { soundtrack.pause(); video.current?.pause() }
-      else if (video.current && !filmFinished.current) void video.current.play().catch(() => setPlayBlocked(true))
+    const pauseFilm = () => {
+      soundtrack.pause()
+      const element = video.current
+      if ((entered.current || playPending.current) && !filmFinished.current && element) {
+        element.pause()
+        setPlayBlocked(true)
+      }
     }
+    const visibility = () => { if (document.hidden) pauseFilm() }
     document.addEventListener('visibilitychange', visibility)
-    return () => { document.removeEventListener('visibilitychange', visibility); soundtrack.dispose() }
+    window.addEventListener('pagehide', pauseFilm)
+    return () => {
+      document.removeEventListener('visibilitychange', visibility)
+      window.removeEventListener('pagehide', pauseFilm)
+      soundtrack.dispose()
+    }
   }, [])
+
+  const enterFilm = () => {
+    const element = video.current
+    if (!element || playPending.current) return
+    if (videoFailed) { if (assetsReady) beginEnvelope(); return }
+    playPending.current = true
+    setFilmStarting(true)
+    // Keep play() inside this gesture, on the existing inline video element.
+    if (!entered.current) element.currentTime = 0
+    element.muted = false
+    element.defaultMuted = false
+    element.volume = 0.85
+    void element.play().then(() => {
+      entered.current = true
+      setFilmEntered(true)
+      setPlayBlocked(element.paused || document.hidden)
+      if (document.hidden) element.pause()
+    }).catch(() => {
+      // A blocked start stays on the poster and requests another gesture.
+      setPlayBlocked(true)
+    }).finally(() => {
+      playPending.current = false
+      setFilmStarting(false)
+    })
+  }
 
   const opened = stage === 'opening' || stage === 'card' || stage === 'yes'
   const planeW = Math.max(w, Math.min(h * 16 / 9, w * 1.35))
@@ -181,19 +215,18 @@ export function App() {
       <AnimatePresence>
         {stage === 'film' && <motion.div className="film" key="film" initial={false} exit={{ opacity: 0 }}
           transition={{ duration: reduced ? .2 : 1.25 }}>
-          <video ref={video} autoPlay muted playsInline preload="auto" poster={media('poster.webp')}
+          <video ref={video} playsInline preload="auto" poster={media('poster.webp')}
             style={{ width: planeW, height: planeH, left: planeX, top: planeY }}
             onTimeUpdate={() => {
               const element = video.current
               if (element && assetsReady && element.duration - element.currentTime <= .12) beginEnvelope()
             }}
+            onPause={() => { if (entered.current && !filmFinished.current && !video.current?.ended) setPlayBlocked(true) }}
             onEnded={() => { filmFinished.current = true; if (assetsReady) beginEnvelope() }}
             onError={() => setVideoFailed(true)} src={media('opening.mp4')} />
-          {(playBlocked || videoFailed) && !assetFailed && <button className="film-start" onClick={() => {
-            track.current.unlock()
-            if (videoFailed && assetsReady) beginEnvelope()
-            else void video.current?.play().then(() => setPlayBlocked(false)).catch(() => { setVideoFailed(true) })
-          }}>{videoFailed ? 'Open your invitation' : 'Begin'}</button>}
+          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className="film-start" disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
+            {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Enter'}
+          </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}
         </motion.div>}
       </AnimatePresence>
