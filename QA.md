@@ -1,55 +1,49 @@
-# Acceptance — 2026-10-06
+# Acceptance — 2026-10-07
 
-## Scope
+## Scope and source
 
-Preserve Scenes 01–02, existing visual assets, exact invitation text and temporary YES state. No Scene 03 or redesign.
+Preserve the opening film, envelope and invitation. Replace the temporary YES screen with the approved celebration video and explicit meeting confirmation. No food question or new artwork is implemented. Answers remain local to the current page.
 
-## Source and deployment
+The public main branch stores editable Vite/React/TypeScript source. GitHub Actions builds and publishes only dist. Vite base: `/quiet-folk-site/`. Production address: https://claire-13-huang.github.io/quiet-folk-site/
 
-The genuine Vite/React/TypeScript source is maintained in the local project. The public `quiet-folk-site` main branch stores the editable application, six runtime media files and configuration. GitHub Actions builds and publishes `dist/`; Pages no longer serves a manually copied main-branch build.
+## Media integrity
 
-Vite base: `/quiet-folk-site/`.
+The supplied master is `庆祝视频.mp4`: HEVC, 1920×1080, 30 fps, 11.7 seconds, embedded stereo AAC. It remains unchanged, SHA-256 `64cc11718ac15076f49cc26322eabf8f9c221b5b2f10ea56dbee9e562df0609c`.
 
-Production URL: https://claire-13-huang.github.io/quiet-folk-site/
+The separate `public/media/celebration-web.mp4` uses H.264, 1920×1080, 30 fps, yuv420p, CRF 20, slow preset and faststart (moov precedes mdat). Its 351 frames preserve the source duration. The AAC stream was copied without re-encoding; source and delivery audio stream SHA-256 both equal `87ab1fb1cd7d5b914720646361973cdc936ab10f00ad0bcee006bdaaabdf0969`.
 
-## Corrections
+The poster is the source video's first frame, extracted for immediate playback fallback. All sixteen earlier supplied originals remain unchanged. The existing opening runtime file is unchanged in this update.
 
-- Scene handoff starts with a closer envelope framing and settles gently into the interactive room.
-- Opening remains disabled until that camera movement has settled.
-- Answer space is reserved before reveal, preventing invitation text from moving when choices appear.
-- Each NO movement is measured from its current position and remains within screen margins.
-- Resizing a displayed card updates its final position without replaying extraction.
-- The room and mobile background dim together after extraction; the card stays sharp.
-- The experience clips oversized scene layers without becoming a scroll container; immediate opening cannot shift the whole scene.
+## Playback and transitions
 
-## Verification
+Enter and YES call play directly within their user gestures on already-mounted inline video elements, starting at zero, unmuted, volume 0.85. A single media owner pauses other sources before playback. No additional music or audio element is added. Scene 01 finishes naturally before its handoff.
 
-Independent source/configuration/workflow and publishing-tree review passed. Production build and typecheck passed both in the local source project and in the curated publishing checkout.
+Celebration preloads before YES. The invitation exits over 280 ms with a slight scale change; celebration fades underneath from approximately 200 to 600 ms. Subtitles use the video clock at duration minus 4.5 seconds and 700 ms later, with an 800 ms line-level fade and 10 px rise, fading during the last 300 ms. The actual ended video stays mounted, holds for 400 ms, then gradually blurs to 5 px on mobile or 6 px on desktop, dims to 0.76 or 0.74, and scales to 1.01.
 
-Production preview at `/quiet-folk-site/` passed natural video playback → immediate envelope opening → sequential copy → repeated NO movement → YES at 390×844, 430×932 and 1440×900. Mobile runs used touch-enabled Chromium contexts. All cards stayed centered within the viewport; no horizontal or internal scene scrolling occurred. Eight consecutive NO moves per size stayed within 16px screen margins and moved 93–110px each. No console/page errors or HTTP asset errors occurred.
+The meeting card reuses the existing botanical paper and exact date/airport copy. Its choices provide local selection feedback without advancing to another question. Portrait playback contains the entire picture, with a soft fill outside it. The cinematic title is centered in the upper safe area. The meeting card reuses the original invitation geometry and paper at each viewport, centered on both axes.
 
-Video uses `preload="auto"`; Scene 02 images were decoded by 2.5 seconds into the 16-second film. Desktop handoff frames and all three viewport screenshots were visually inspected. Stable copy did not shift when choices appeared, and resizing the extracted card did not replay extraction.
+Leaving the tab pauses both videos, including pending playback. Returning requires Resume and keeps the existing video position and subtitle clock. Rejected playback keeps the poster visible and offers another user gesture; no silent autoplay fallback is used.
 
-GitHub Pages publishing source is GitHub Actions. The first automatic production build/deployment succeeded in run `37432825042`. The final clip correction passed automatic build and deployment in run `37433204702`, source commit `11d59b92f4da2fdbb554d53764da45763aa48c39`.
+## Earlier integration verification (before targeted layout correction)
 
-Original visual files and runtime picture streams remain unchanged. The opening container's audio restoration is documented below. Mobile acceptance uses browser emulation rather than a physical iPhone.
+Production build and TypeScript checks passed. Complete natural opening-with-audio → envelope → invitation → YES → celebration-with-audio → timed subtitles → meeting confirmation passed at 390×844, 430×932 and 1440×900. Both mobile sizes used actual Playwright touch taps; desktop used mouse clicks.
 
+Before YES, celebration readyState was 4 and all 11.7 seconds were buffered. Play was invoked with user activation, time zero and muted false for both videos. A test-only Chromium audio analyser measured nonzero output from both embedded soundtracks; no analyser exists in production. A 20 ms monitor found no overlapping active audio sources. Celebration started in approximately 13–17 ms. The invitation was removed by 350 ms. The final frame hold measured approximately 402–412 ms.
 
-## Live verification
+The early celebration had no visible text. Both exact subtitle lines appeared after their scheduled times. All meeting copy and both choices were usable and stayed within the viewport. No horizontal scrolling, HTTP asset failures, page errors or console errors occurred. Transition, early celebration, subtitle and meeting screenshots were visually inspected at all three sizes.
 
-The unchanged production address returned the new production asset versions. Natural opening playback → immediate envelope interaction → exact invitation copy → NO → YES passed at 390×844 with touch emulation and 1440×900 with mouse input. Scene 02 images were ready while the film played. The card remained centered, scene scroll offsets stayed zero, and no console/page errors or failed asset responses occurred. Live NO movement measured 93px on mobile and 110px on desktop.
+Native WebKit with iPhone 15 emulation passed the complete touch flow, enabled embedded audio, playsInline and no fullscreen takeover. Pausing celebration on pagehide preserved time; Resume continued rather than restarting. Native WebKit was checked without inserting an audio analyser into its playback path.
 
-The supplied film ending and Scene 02 image use different compositions. The camera pullback softens their size difference; their fade retains a brief image overlap. Artistic preference for this overlap and pullback pacing remains a visual judgment.
+Injected NotAllowedError and interruption during a pending celebration start both retained a paused poster with no early subtitles, then completed celebration and meeting after another gesture, unmuted and without overlap. Existing opening zero-volume and blocked-playback fallback checks also passed in the preceding audio acceptance.
 
+Physical iPhone hardware, its mute switch and physical speakers were not tested. Browser audio output and Safari/WebKit playback behavior were verified through the tests above. Artistic preferences for caption placement and the final shallow-focus strength remain visual judgments.
 
-## Original Scene 01 audio — 2026-10-06
+## Targeted layout correction
 
-The previously delivered `opening.mp4` contained video only, and the component also forced muted autoplay. The runtime MP4 now includes the original AAC track copied without re-encoding from the unchanged source video. Stream-content SHA-256 matches exactly: original/restored audio `fe89c00ed8a882e92382fb7ebdc2a6a74aa041278f750251d5bb74c3bf26d6e2`; previous/current delivered picture `2b2e946b04f9fe74433837bdabb288da90e9203b0efd25fd9be8c00ea1e457d2`. All sixteen originals remain unchanged.
+The meeting card now uses the original invitation width, height and paper, with its center at the viewport center. Typography and spacing fit within that unchanged shell; no separate flat or bottom-aligned card remains. Its entrance uses opacity, scale 0.97 to 1 and a 12 px rise over 800 ms.
 
-Enter starts the already-mounted inline video from zero, unmuted, at volume 0.85. There is no autoplay request before entry and no additional Scene 01 audio source. Leaving the page pauses the same element, including a pending first start; Resume continues its existing position. A denied request leaves Enter available without silent fallback. Device volume cannot be overridden. The restored MP4 request uses a release query so returning visitors do not reuse the previously cached silent file.
+Celebration title timing follows loaded video duration: first line at duration minus 4.5 seconds, second 700 ms later, fade out over the final 300 ms. The centered desktop title uses the existing elegant serif, maximum width 850 px, main font clamp(42 px, 5 vw, 76 px) and smaller secondary copy. Mobile places the title above the complete contained picture. Audio, media files, opening scene, envelope and YES/NO behavior were not modified by this correction.
 
-Production build passed. Chromium verified no pre-entry playback, an unmuted start inside the user gesture, and nonzero audio output measured from the video through a test-only analyser. No analyser exists in production. The complete Scene 01 → Scene 02 → invitation → YES flow passed. Visibility interruption preserved time and resumed without restarting or creating another media element.
+One targeted desktop check at 1440×900 and one mobile check at 390×844 passed for this correction, bypassing the opening film and seeking celebration to its final six seconds. No production debugging entry is added.
 
-Injected NotAllowedError left the poster paused at zero and allowed another tap to start with sound. Zero-volume playback completed the existing flow. Interruption during the initial pending request paused the video and allowed retry from zero.
-
-WebKit iPhone 15 emulation verified user-tap playback, an enabled embedded audio track, playsInline, no fullscreen takeover and pause/resume from the same position. Physical iPhone/Safari and hardware mute controls were not tested. Independent code and stream-integrity review passed.
+Measured original/meeting shells match exactly: 760×410.8 px on desktop and 358×438 px on mobile. Meeting centers equal viewport centers. Both title lines were fully visible around video time 9 seconds. No page/console errors or horizontal scrolling occurred. The initial mobile meeting screenshot exposed hidden background characters; the same final video frame now moves gently to the upper area in that state, retaining all faces above the centered card. Only that failed mobile screenshot was rechecked.
