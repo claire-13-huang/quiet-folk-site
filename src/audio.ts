@@ -24,7 +24,7 @@ export class Soundtrack {
     source.buffer = buffer
     source.loop = true
     gain.gain.setValueAtTime(0, context.currentTime)
-    gain.gain.linearRampToValueAtTime(this.musicVolume * (this.video ? .12 : 1), context.currentTime + .6)
+    gain.gain.linearRampToValueAtTime(this.musicVolume * (this.video ? .65 : 1), context.currentTime + .6)
     source.connect(gain); gain.connect(context.destination)
     this.music = source; this.musicGain = gain; this.musicStarted = context.currentTime
     source.start(0, this.musicOffset % buffer.duration)
@@ -46,7 +46,7 @@ export class Soundtrack {
       const gain = this.musicGain.gain, now = this.context.currentTime
       gain.cancelScheduledValues(now)
       gain.setValueAtTime(gain.value, now)
-      gain.setTargetAtTime(this.musicVolume * (this.video ? .12 : 1), now, .15)
+      gain.setTargetAtTime(this.musicVolume * (this.video ? .65 : 1), now, .35)
     }
   }
   preload() {

@@ -245,6 +245,11 @@ export function App() {
   }, [stage])
   useEffect(() => {
     const soundtrack = track.current
+    const startMusic = () => soundtrack.unlock()
+    // Defer the initial attempt so Strict Mode's discarded mount does not decode twice.
+    const initialMusic = window.requestAnimationFrame(startMusic)
+    document.addEventListener('pointerdown', startMusic)
+    document.addEventListener('keydown', startMusic)
     const pauseMedia = () => {
       soundtrack.pause()
       if ((entered.current || playPending.current) && !filmFinished.current && video.current) setPlayBlocked(true)
@@ -258,6 +263,9 @@ export function App() {
     return () => {
       document.removeEventListener('visibilitychange', visibility)
       window.removeEventListener('pagehide', pauseMedia)
+      window.cancelAnimationFrame(initialMusic)
+      document.removeEventListener('pointerdown', startMusic)
+      document.removeEventListener('keydown', startMusic)
       soundtrack.dispose()
     }
   }, [])
