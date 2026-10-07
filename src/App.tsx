@@ -17,14 +17,15 @@ const letterParagraphs = [
   '7/10-2026',
 ]
 const oliveLines = [
-  'Claire asked me to keep something safe for you.',
+  'I’ve been keeping something safe for you.',
   'I was told not to give it to you until the very end.',
   'I think this belongs to you now.',
 ]
 const friends = [
-  { name: 'Orion', line: 'I’m not saying I’m excited… but Colette and Claire, you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 82, y: 24 },
-  { name: '大灰', line: 'Colette and Claire, may your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 84, y: 70 },
-  { name: '茶小熊', line: 'Colette and Claire, I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 37, y: 66 },
+  { name: 'Olive', line: 'I’ll be waiting for all your happy stories. Have a wonderful trip — and save a little cuddle for me when you’re back.', x: 14, y: 66 },
+  { name: 'Orion', line: 'I’m not saying I’m excited… but you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 82, y: 24 },
+  { name: '大灰', line: 'May your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 84, y: 70 },
+  { name: '茶小熊', line: 'I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 37, y: 66 },
 ]
 const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg', 'celebration-room.jpg', 'sealed.webp']
 type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'olive-npc' | 'hidden-letter' | 'room-explore'
@@ -574,7 +575,7 @@ export function App() {
         {activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
         <div className="friend-spots" style={explorePosition}>
           {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)}>
-            <svg className="friend-glow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5Z" /></svg>
+            <span className="friend-cue" aria-hidden="true"><svg viewBox="0 0 30 24"><path d="M5 2h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H14l-5 4v-4H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" /><circle cx="9" cy="10" r="1" /><circle cx="15" cy="10" r="1" /><circle cx="21" cy="10" r="1" /></svg><span>Talk</span></span>
           </button>)}
         </div>
         <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>

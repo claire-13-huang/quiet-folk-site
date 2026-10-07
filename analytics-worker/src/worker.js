@@ -43,11 +43,16 @@ async function collect(request,env) {
  const region=typeof geo.region==='string'?geo.region.slice(0,80):'Unknown';
  const active=Math.min(data.active_seconds,previous?Math.max(0,Math.ceil((now-previous.started)/1000)):30);
  const notices=await notificationStatements(env,data.session_id,data.event,now);
- await env.DB.batch([
+ const analyticsWrites=[
  env.DB.prepare(`INSERT INTO sessions (session_id,visitor_id,origin,started,last_seen,active_seconds,device,browser,os,country,region,ended,is_test) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET last_seen=MAX(last_seen,excluded.last_seen),active_seconds=MAX(active_seconds,excluded.active_seconds),ended=CASE WHEN excluded.last_seen>=last_seen THEN excluded.ended ELSE ended END`).bind(data.session_id,data.visitor_id,origin,now,now,active,info.device,info.browser,info.os,country,region,data.event==='session_end'?1:0,test),
  env.DB.prepare('INSERT OR IGNORE INTO events (event_id,session_id,event,timestamp,food) VALUES (?,?,?,?,?)').bind(data.event_id,data.session_id,data.event,stamp,data.event==='food_choice'?data.food:null),
- ...notices
- ]);
+ ];
+ try { await env.DB.batch([...analyticsWrites,...notices]); }
+ catch {
+  // A failed notification write must never discard the analytics event.
+  await env.DB.batch(analyticsWrites);
+  console.warn('Notification storage unavailable; analytics event retained');
+ }
  return json({ok:true},200,cors);
 }
 async function overview(env,range,hideTests=true) {
