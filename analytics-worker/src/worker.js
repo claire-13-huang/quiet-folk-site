@@ -1,9 +1,10 @@
+import { notificationStatements, deliverNotifications } from './notifications.js';
 import html from './dashboard.html';
 import css from './dashboard.css';
 import js from './dashboard.js.txt';
 const origins = new Set(['https://october-with-you.vercel.app','https://claire-13-huang.github.io']);
 const journey = ['page_open','come_in','envelope_open','invitation_yes','meeting_confirm','food_choice','secret_letter_open'];
-const allowed = new Set([...journey,'scene01_complete','replay','heartbeat','session_end']);
+const allowed = new Set([...journey,'scene01_complete','replay','heartbeat','session_end','meeting_adjust']);
 const foods = new Set(['Japanese / Sushi','Cha chaan teng','Korean','Italian / Pasta','We can decide later']);
 const headers = {'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"};
 const json = (data,status=200,extra={}) => new Response(JSON.stringify(data),{status,headers:{...headers,'Content-Type':'application/json',...extra}});
@@ -41,9 +42,11 @@ async function collect(request,env) {
  const country=typeof geo.country==='string'?geo.country.slice(0,8):'Unknown';
  const region=typeof geo.region==='string'?geo.region.slice(0,80):'Unknown';
  const active=Math.min(data.active_seconds,previous?Math.max(0,Math.ceil((now-previous.started)/1000)):30);
+ const notices=await notificationStatements(env,data.session_id,data.event,now);
  await env.DB.batch([
  env.DB.prepare(`INSERT INTO sessions (session_id,visitor_id,origin,started,last_seen,active_seconds,device,browser,os,country,region,ended,is_test) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET last_seen=MAX(last_seen,excluded.last_seen),active_seconds=MAX(active_seconds,excluded.active_seconds),ended=CASE WHEN excluded.last_seen>=last_seen THEN excluded.ended ELSE ended END`).bind(data.session_id,data.visitor_id,origin,now,now,active,info.device,info.browser,info.os,country,region,data.event==='session_end'?1:0,test),
- env.DB.prepare('INSERT OR IGNORE INTO events (event_id,session_id,event,timestamp,food) VALUES (?,?,?,?,?)').bind(data.event_id,data.session_id,data.event,stamp,data.event==='food_choice'?data.food:null)
+ env.DB.prepare('INSERT OR IGNORE INTO events (event_id,session_id,event,timestamp,food) VALUES (?,?,?,?,?)').bind(data.event_id,data.session_id,data.event,stamp,data.event==='food_choice'?data.food:null),
+ ...notices
  ]);
  return json({ok:true},200,cors);
 }
@@ -68,7 +71,7 @@ async function overview(env,range,hideTests=true) {
  }
  return {metrics,counts:counts.results,chart:chart.results,sessions:recent.results,food:food.results,replays:replays.count,funnel,range,now:Date.now()};
 }
-export default {async fetch(request,env) {
+export default {async scheduled(_event,env,ctx) { ctx.waitUntil(deliverNotifications(env)); },async fetch(request,env) {
  const path=new URL(request.url).pathname;
  try {
  if(path==='/collect') return await collect(request,env);

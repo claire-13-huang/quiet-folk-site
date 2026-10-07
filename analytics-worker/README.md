@@ -29,3 +29,9 @@ Collection failures are isolated from invitation actions. Session IDs and event 
 Visitor IDs are read before generating a new ID and only written when absent. If localStorage cannot persist identity, tracking stops rather than counting a different visitor every visit. New sessions reuse the same visitor ID within each frontend origin. Admin paths never initialize tracking.
 
 The Chinese dashboard hides test visits by default across every metric, chart, funnel and table. The detail drawer can mark or unmark all visits for one exact visitor ID and origin. New sessions inherit that test marker. Migration 0002 labels only the two exact sessions from the first deployment QA; no production data is deleted.
+
+## Invitation email notifications
+
+Apply `0003_email_notifications.sql` before releasing the Worker. New accepted visits enqueue one acceptance email and one later summary, independently of visitor identity. Food choice or page exit brings the summary forward; otherwise it is due after ten minutes. Missing choices are reported as unconfirmed. A minute cron delivers the durable queue. Eight failed attempts leave an explicit `failed` record. Email payloads are frozen for retries and Resend idempotency keys prevent duplicate deliveries. Existing visits are not backfilled.
+
+Set Worker secrets `RESEND_API_KEY` and `NOTIFICATION_TO` using a local private secrets file; optional `EMAIL_FROM` defaults to `Quiet Folk <onboarding@resend.dev>`. The Resend test sender can deliver only to the account owner's email; other recipients require a verified sending domain. No credentials or recipient address belong in frontend source. Without these secrets, notices remain queued, and email delivery is not enabled. An API email ID proves provider acceptance, not inbox delivery.

@@ -520,7 +520,7 @@ export function App() {
           <motion.h1 animate={{ opacity: meetingCopy >= 2 ? 1 : 0, y: meetingCopy >= 2 ? 0 : 8 }} transition={{ duration: .8 }}>October 22, 12:00 PM —<br />Hong Kong Airport?</motion.h1>
           <motion.div className="meeting-answers" animate={{ opacity: meetingCopy >= 3 ? 1 : 0 }} transition={{ duration: .8 }} inert={meetingCopy < 3}>
             <button className="answer yes-answer" aria-pressed={meetingChoice === 'confirmed'} disabled={meetingCopy < 3 || meetingChoice !== null} onClick={() => { trackEvent('meeting_confirm'); setMeetingConfirmed(true); setMeetingChoice('confirmed'); setStage('food-choice') }}>Yes, see you then ♡</button>
-            <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let's adjust it</button>
+            <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => { trackEvent('meeting_adjust'); setMeetingChoice('adjust') }}>Let's adjust it</button>
           </motion.div>
           <p className="meeting-status" role="status" style={meetingChoice === 'adjust' ? { height: 40 } : undefined}>{meetingChoice === 'confirmed' ? 'See you then ♡' : meetingChoice === 'adjust' ? <>Of course —<br />we’ll figure it out together. ♡</> : ''}</p>
         </div>

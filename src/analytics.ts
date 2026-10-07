@@ -1,4 +1,4 @@
-type EventName = 'page_open' | 'come_in' | 'scene01_complete' | 'envelope_open' | 'invitation_yes' | 'meeting_confirm' | 'food_choice' | 'secret_letter_open' | 'replay'
+type EventName = 'page_open' | 'come_in' | 'scene01_complete' | 'envelope_open' | 'invitation_yes' | 'meeting_confirm' | 'meeting_adjust' | 'food_choice' | 'secret_letter_open' | 'replay'
 const endpoint = 'https://quiet-folk-analytics.claire-quiet-folk.workers.dev/collect'
 let visitor = '', session = '', active = 0, visibleSince: number | null = null
 let pending = Promise.resolve()
@@ -12,7 +12,15 @@ function send(event: EventName | 'heartbeat' | 'session_end', food?: string, bea
     const body = JSON.stringify({ visitor_id: visitor, session_id: session, event_id: crypto.randomUUID(), event, timestamp: Date.now(), active_seconds: Math.min(86400, seconds()), page_path: location.pathname, ...(food ? { food } : {}) })
     if (beacon && navigator.sendBeacon?.(endpoint, new Blob([body], { type: 'text/plain' }))) return
     pending = pending.then(async () => {
-      try { await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body, keepalive: true, credentials: 'omit', signal: AbortSignal.timeout(5000) }) } catch { /* Analytics is optional and never interrupts the invitation. */ }
+      const attempts = ['invitation_yes', 'meeting_confirm', 'meeting_adjust', 'food_choice'].includes(event) ? 3 : 1
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        try {
+          const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body, keepalive: true, credentials: 'omit', signal: AbortSignal.timeout(5000) })
+          if (response.ok) return
+          if (response.status < 500 && response.status !== 429) return
+        } catch { /* Retry the same event ID without interrupting the invitation. */ }
+        if (attempt + 1 < attempts) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+      }
     })
   } catch { /* Storage, UUID, and transport restrictions must never affect the invitation. */ }
 }
