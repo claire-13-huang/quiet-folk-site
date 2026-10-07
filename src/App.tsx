@@ -453,7 +453,7 @@ export function App() {
             <motion.p className="salutation" initial={{ opacity: 0 }} animate={reveal(1)} transition={{ duration: reduced ? .1 : .9 }}>For Colette</motion.p>
             <motion.p className="introduction" initial={{ opacity: 0 }} animate={reveal(2)} transition={{ duration: reduced ? .1 : .9 }}>I know we're already going…</motion.p>
             <motion.p className="introduction invitation-properly" initial={{ opacity: 0 }} animate={reveal(3)} transition={{ duration: reduced ? .1 : .9 }}>but I still wanted to ask properly.</motion.p>
-            <motion.h1 initial={{ opacity: 0 }} animate={reveal(4)} transition={{ duration: reduced ? .1 : 1 }}>Will you make these few days in Hong Kong<br />our little getaway?</motion.h1>
+            <motion.h1 initial={{ opacity: 0 }} animate={reveal(4)} transition={{ duration: reduced ? .1 : 1 }}>Shall we make these few days in Hong Kong<br />our little getaway?</motion.h1>
             <motion.div initial={false} animate={{ opacity: copy >= 5 && stage === 'invitation-card' ? 1 : 0, y: copy >= 5 || reduced ? 0 : 6 }} transition={{ duration: .8 }} aria-hidden={copy < 5 || stage !== 'invitation-card'} inert={copy < 5 || stage !== 'invitation-card'}>
               <Answers reduced={reduced} active={copy >= 5 && stage === 'invitation-card'} onYes={playCelebration} />
             </motion.div>
