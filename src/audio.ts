@@ -13,11 +13,12 @@ export class Soundtrack {
   private music: HTMLAudioElement | null = null
   private musicSource: MediaElementAudioSourceNode | null = null
   private musicGain: GainNode | null = null
+  private musicStarted = false
   private musicEnabled = true
   private musicVolume = .25
   resumeMusic() {
-    if (!this.musicEnabled || document.hidden || !this.music || !this.music.paused) return
-    // Native audio can autoplay on allowed sites without waiting for Web Audio unlock.
+    if (!this.musicStarted || !this.musicEnabled || document.hidden || !this.music || !this.music.paused) return
+    // The first page gesture starts the music before the opening film.
     void this.music.play().catch(error => {
       if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') console.warn('Background music could not play', error)
     })
@@ -52,7 +53,6 @@ export class Soundtrack {
       this.music.loop = true
       this.music.preload = 'auto'
       this.music.volume = this.musicVolume
-      this.resumeMusic()
     }
     this.data ??= Promise.all((Object.entries(sources) as [Channel, string][]).map(async ([channel, source]) => {
       const response = await fetch(source)
@@ -70,6 +70,7 @@ export class Soundtrack {
   }
   releaseVideo(video: HTMLVideoElement | null) { if (this.video === video) { this.video = null; this.setMusicVolume(this.musicVolume); this.resumeMusic() } }
   unlock() {
+    this.musicStarted = true
     this.context ??= new AudioContext()
     const context = this.context
     this.resumeMusic()

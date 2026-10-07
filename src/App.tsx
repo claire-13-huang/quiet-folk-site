@@ -133,6 +133,7 @@ export function App() {
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
   const [playBlocked, setPlayBlocked] = useState(false)
+  const [entryRevealed, setEntryRevealed] = useState(false)
   const [filmEntered, setFilmEntered] = useState(false)
   const [filmStarting, setFilmStarting] = useState(false)
   const entered = useRef(false)
@@ -279,9 +280,7 @@ export function App() {
   }, [stage])
   useEffect(() => {
     const soundtrack = track.current
-    const startMusic = () => soundtrack.unlock()
-    // Defer the initial attempt so Strict Mode's discarded mount does not decode twice.
-    const initialMusic = window.requestAnimationFrame(startMusic)
+    const startMusic = () => { setEntryRevealed(true); soundtrack.unlock() }
     document.addEventListener('pointerdown', startMusic)
     document.addEventListener('keydown', startMusic)
     const pauseMedia = () => {
@@ -297,7 +296,6 @@ export function App() {
     return () => {
       document.removeEventListener('visibilitychange', visibility)
       window.removeEventListener('pagehide', pauseMedia)
-      window.cancelAnimationFrame(initialMusic)
       document.removeEventListener('pointerdown', startMusic)
       document.removeEventListener('keydown', startMusic)
       soundtrack.dispose()
@@ -414,12 +412,12 @@ export function App() {
             onEnded={() => { trackEvent('scene01_complete'); filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           <motion.div className="entry-background" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.6 }} />
-          <AnimatePresence>{!filmEntered && <motion.div className="entry-copy" initial={false} animate={{ opacity: filmStarting ? 0 : 1 }} exit={{ opacity: 0 }} transition={{ duration: .5 }}>
+          <AnimatePresence>{entryRevealed && !filmEntered && <motion.div className="entry-copy" initial={false} animate={{ opacity: filmStarting ? 0 : 1 }} exit={{ opacity: 0 }} transition={{ duration: .5 }}>
             <motion.p initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? .1 : 1, delay: reduced ? 0 : .4 }}>Hi, it’s Claire.</motion.p>
             <motion.p initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? .1 : 1, delay: reduced ? 0 : 1.25 }}>I made something for you.</motion.p>
             <motion.div className="entry-ornament" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .9, delay: reduced ? 0 : 2.1 }}><span /><svg viewBox="0 0 40 40"><path d="M20 34 5 19C-5 7 12-3 20 9 28-3 45 7 35 19Z" /></svg><span /></motion.div>
           </motion.div>}</AnimatePresence>
-          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered && !videoFailed ? ' entry-button' : ''}`} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
+          {entryRevealed && (!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered && !videoFailed ? ' entry-button' : ''}`} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
           </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}
