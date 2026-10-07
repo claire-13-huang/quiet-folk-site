@@ -21,8 +21,13 @@ const oliveLines = [
   'I was told not to give it to you until the very end.',
   'I think this belongs to you now.',
 ]
+const friends = [
+  { name: 'Orion', line: 'I’m not saying I’m excited… but Colette and Claire, you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 82, y: 24 },
+  { name: '大灰', line: 'Colette and Claire, may your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 84, y: 70 },
+  { name: '茶小熊', line: 'Colette and Claire, I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 37, y: 66 },
+]
 const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg', 'celebration-room.jpg', 'sealed.webp']
-type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'olive-npc' | 'hidden-letter'
+type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'olive-npc' | 'hidden-letter' | 'room-explore'
 
 function useViewport() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -162,6 +167,7 @@ export function App() {
   const [meetingConfirmed, setMeetingConfirmed] = useState(false)
   const [foodChoice, setFoodChoice] = useState<string | null>(null)
   const [letterCopy, setLetterCopy] = useState(0)
+  const [activeFriend, setActiveFriend] = useState<number | null>(null)
   const [foodCopy, setFoodCopy] = useState(0)
   const [postFrameReady, setPostFrameReady] = useState(false)
   const [oliveReady, setOliveReady] = useState(false)
@@ -361,8 +367,8 @@ export function App() {
     setStage('celebration-video')
   }
 
-  const celebrating = ['celebration-video', 'meeting-confirmation', 'food-choice', 'final-summary', 'olive-npc', 'hidden-letter'].includes(stage)
-  const stationery = ['meeting-confirmation', 'food-choice', 'final-summary', 'olive-npc', 'hidden-letter'].includes(stage)
+  const celebrating = ['celebration-video', 'meeting-confirmation', 'food-choice', 'final-summary', 'olive-npc', 'hidden-letter', 'room-explore'].includes(stage)
+  const stationery = ['meeting-confirmation', 'food-choice', 'final-summary', 'olive-npc', 'hidden-letter', 'room-explore'].includes(stage)
   useEffect(() => {
     if (!stationery) return
     const timer = window.setTimeout(() => setPostFrameReady(true), 600)
@@ -370,6 +376,14 @@ export function App() {
   }, [stationery])
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
+  const exploring = stage === 'room-explore'
+  const exploreWidth = Math.min(w, h * 16 / 9)
+  const exploreHeight = exploreWidth * 9 / 16
+  const explorePosition = { left: (w - exploreWidth) / 2, top: w < 600 ? 48 : (h - exploreHeight) / 2, width: exploreWidth, height: exploreHeight }
+  const openPrivateLetter = () => {
+    setActiveFriend(null); setLetterCopy(0)
+    track.current.unlock(); track.current.play('paper'); trackEvent('secret_letter_open'); setStage('hidden-letter')
+  }
   const oliveFocus = stage === 'olive-npc'
   const secretWidth = w < 600 ? 168 : 190
   const secretPosition = { left: w < 600 ? w * .29 : w * .27, top: w < 600 ? 205 : h * .59, width: secretWidth }
@@ -390,7 +404,7 @@ export function App() {
   }
 
   return <MotionConfig reducedMotion="user" transition={{ type: 'tween', ease }}>
-    <main className="experience" data-stage={stage} aria-label="An invitation for Colette">
+    <main className="experience" onKeyDown={event => { if (event.key === 'Escape') setActiveFriend(null) }} data-stage={stage} aria-label="An invitation for Colette">
       <motion.div className="room-fill" aria-hidden="true" animate={{ filter: extract ? 'blur(25px) brightness(0.42)' : 'blur(25px) brightness(0.62)' }} transition={{ duration: reduced ? .2 : 2, delay: extract ? .4 : 0 }} />
       <motion.div className="room" style={{ width: planeW, height: planeH, left: planeX, top: planeY, transformOrigin: '53.7% 58.3%' }}
         initial={false}
@@ -472,7 +486,7 @@ export function App() {
         initial={false} animate={{ opacity: celebrating ? 1 : 0 }}
         transition={{ duration: reduced ? .15 : .4, delay: celebrating ? .2 : 0 }} style={{ pointerEvents: celebrating ? 'auto' : 'none' }}>
         <motion.div className="celebration-picture" style={{ transformOrigin: w < 600 ? '16% 12%' : '16% 55%' }} initial={false}
-          animate={{ filter: oliveFocus ? 'blur(2px) brightness(0.86)' : stationery ? w < 600 ? 'blur(5px) brightness(0.72)' : 'blur(6px) brightness(0.72)' : 'blur(0px) brightness(1)', scale: oliveFocus ? 1.12 : stationery ? 1.015 : 1, x: oliveFocus ? w * .055 : 0, y: oliveFocus && w >= 600 ? -8 : 0 }}
+          animate={{ filter: exploring ? 'blur(0px) brightness(0.94)' : oliveFocus ? 'blur(2px) brightness(0.86)' : stationery ? w < 600 ? 'blur(5px) brightness(0.72)' : 'blur(6px) brightness(0.72)' : 'blur(0px) brightness(1)', scale: exploring ? 1 : oliveFocus ? 1.12 : stationery ? 1.015 : 1, x: oliveFocus ? w * .055 : 0, y: oliveFocus && w >= 600 ? -8 : 0 }}
           transition={{ duration: reduced ? .2 : 1.25, scale: { duration: reduced ? .2 : oliveFocus || stage === 'hidden-letter' ? 1.4 : 24, ease: oliveFocus ? ease : 'linear' }, x: { duration: 1.4 }, y: { duration: 1.4 } }}>
           <div className="celebration-fill" style={{ backgroundImage: `url(${media('celebration-poster.jpg')})` }} aria-hidden="true" />
           <video ref={celebration} className="celebration-video" style={{ visibility: postFrameReady ? 'hidden' : 'visible', opacity: stationery ? 0 : 1, transition: 'opacity .6s' }} playsInline preload="auto" poster={media('celebration-poster.jpg')}
@@ -487,7 +501,7 @@ export function App() {
               setCelebrationEnded(true)
             }}
             onError={() => { setCelebrationFailed(true); setCelebrationBlocked(true) }} />
-          <motion.img className="post-celebration-image" src={media('celebration-room.jpg')} alt="" initial={false} animate={{ opacity: stationery ? 1 : 0 }} transition={{ duration: .6 }} />
+          <motion.img className="post-celebration-image" style={exploring ? explorePosition : undefined} src={media('celebration-room.jpg')} alt="" initial={false} animate={{ opacity: stationery ? 1 : 0 }} transition={{ duration: .6 }} />
         </motion.div>
         {stage === 'celebration-video' && <div className="celebration-copy" aria-live="polite">
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: titleVisible && celebrationTime >= titleStart ? 1 : 0, y: celebrationTime >= titleStart ? 0 : 10 }} transition={{ duration: titleVisible ? .8 : .3 }}>Thank you for saying yes.</motion.p>
@@ -539,7 +553,7 @@ export function App() {
       </AnimatePresence>
       {stage === 'olive-npc' && <motion.button className="secret-envelope" aria-label="Open the sealed private letter" disabled={!secretReady} style={secretPosition}
         initial={{ opacity: 0, y: 6 }} animate={{ opacity: secretReady ? 1 : 0, y: secretReady ? 0 : 6 }} whileHover={{ y: -4 }} transition={{ duration: .8 }}
-        onClick={() => { track.current.unlock(); track.current.play('paper'); trackEvent('secret_letter_open'); setStage('hidden-letter') }}>
+        onClick={openPrivateLetter}>
         <img src={media('sealed.webp')} alt="" /><span className="wax-seal" aria-hidden="true" />
       </motion.button>}
       {stage === 'hidden-letter' && <>
@@ -553,8 +567,25 @@ export function App() {
           <div className="letter-scroll">
             {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 4 ? 'letter-miss' : i === 6 ? 'letter-signature' : i === 7 ? 'letter-date' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
           </div>
+          <button className="letter-close" onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
         </motion.article>
       </>}
+      {exploring && <>
+        {activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
+        <div className="friend-spots" style={explorePosition}>
+          {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)}>
+            <svg className="friend-glow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5Z" /></svg>
+          </button>)}
+        </div>
+        <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>
+      </>}
+      <AnimatePresence mode="wait">
+        {exploring && activeFriend !== null && <motion.section key={activeFriend} className="olive-dialogue friend-dialogue" role="dialog" aria-label={`A wish from ${friends[activeFriend].name}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .3 }}>
+          <span className="olive-name">{friends[activeFriend].name}</span>
+          <p className="olive-line">{friends[activeFriend].line}</p>
+          <button className="friend-close" onClick={() => setActiveFriend(null)}>Close</button>
+        </motion.section>}
+      </AnimatePresence>
 
       <button className="fullscreen-toggle" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-pressed={fullscreen} title="Fullscreen · F / Command + 9" onClick={() => { void toggleFullscreen() }}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={fullscreen ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6' : 'M3 9V3h6M15 3h6v6M3 15v6h6M15 21h6v-6'} /></svg>
