@@ -101,3 +101,12 @@
 @keyframes opening-cta{from{opacity:0;visibility:hidden}to{opacity:1;visibility:visible}}
 @media(prefers-reduced-motion:reduce){.film .entry-button{animation-duration:.1s;animation-delay:0s}}
 @media(max-width:599px){.entry-background{background-position:28% center}.entry-copy{top:43%;font-size:36px;width:96%;line-height:1.12}.entry-copy p+p{font-size:27px;margin-top:12px}.entry-ornament{width:230px;margin-top:24px}.entry-ornament svg{width:27px;height:27px}.film .entry-button{top:59%;min-width:168px;font-size:29px}.film .entry-button::before,.film .entry-button::after{width:35px}}
+
+.music-control{position:absolute;z-index:30;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));color:#f3dfb6;font-family:'EB Garamond',Baskerville,Georgia,serif}
+.music-toggle{display:grid;place-items:center;width:44px;height:44px;padding:11px;border:1px solid #d5b47c88;border-radius:50%;background:#352417b8;color:#f3dfb6;box-shadow:0 2px 10px #21160d18;transition:background .3s}
+.music-toggle:hover{background:#59422cd9}.music-toggle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.music-panel{position:absolute;right:0;top:54px;width:208px;padding:16px 18px 12px;border:1px solid #aa875966;border-radius:3px;background:#e7d4afd9;backdrop-filter:blur(5px);color:#59432c;box-shadow:0 4px 14px #35241720;animation:music-panel-in .3s ease both}
+.music-panel-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:20px}.music-switch{padding:4px 9px;min-width:44px;min-height:36px;border:1px solid #a7855266;border-radius:2px;background:transparent;color:#6b4d2b;font-size:16px}
+.music-panel label{display:flex;justify-content:space-between;font-size:16px}.music-panel input{width:100%;height:30px;margin:4px 0 0;accent-color:#8c6c3e;cursor:pointer}.music-panel p{margin:3px 0 0;font-size:13px;color:#785f40}
+@keyframes music-panel-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.music-panel{animation:none}}

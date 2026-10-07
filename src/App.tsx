@@ -92,6 +92,9 @@ function Answers({ onYes, reduced, active }: { onYes: () => void; reduced: boole
 export function App() {
   const reduced = !!useReducedMotion()
   const { w, h } = useViewport()
+  const [musicOpen, setMusicOpen] = useState(false)
+  const [musicEnabled, setMusicEnabled] = useState(true)
+  const [musicVolume, setMusicVolume] = useState(25)
   const [stage, setStage] = useState<Stage>('film')
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
@@ -249,7 +252,7 @@ export function App() {
       if ((celebrationEntered.current || celebrationPending.current) && !celebrationComplete.current && celebration.current) setCelebrationBlocked(true)
       celebration.current?.pause()
     }
-    const visibility = () => { if (document.hidden) pauseMedia() }
+    const visibility = () => { if (document.hidden) pauseMedia(); else soundtrack.resumeMusic() }
     document.addEventListener('visibilitychange', visibility)
     window.addEventListener('pagehide', pauseMedia)
     return () => {
@@ -507,6 +510,17 @@ export function App() {
         </motion.article>
       </>}
 
+      <div className="music-control" onKeyDown={event => { if (event.key === 'Escape') setMusicOpen(false) }}>
+        <button className="music-toggle" aria-label="Music settings" aria-expanded={musicOpen} aria-controls="music-panel" onClick={() => setMusicOpen(!musicOpen)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13M9 8l11-2" /><ellipse cx="6" cy="18" rx="3" ry="2" /><ellipse cx="17" cy="16" rx="3" ry="2" />{!musicEnabled && <path d="M3 3 21 21" />}</svg>
+        </button>
+        {musicOpen && <div id="music-panel" className="music-panel">
+          <div className="music-panel-heading"><span>Music</span><button className="music-switch" aria-pressed={musicEnabled} onClick={() => { const enabled = !musicEnabled; setMusicEnabled(enabled); track.current.setMusicEnabled(enabled) }}>{musicEnabled ? 'On' : 'Off'}</button></div>
+          <label htmlFor="music-volume">Volume <span>{musicVolume}%</span></label>
+          <input id="music-volume" type="range" min="0" max="100" value={musicVolume} onChange={event => { const volume = Number(event.target.value); setMusicVolume(volume); track.current.setMusicVolume(volume / 100) }} />
+          <p>Pauses during films.</p>
+        </div>}
+      </div>
     </main>
   </MotionConfig>
 }
