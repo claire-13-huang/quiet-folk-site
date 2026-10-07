@@ -4,16 +4,16 @@ import { Soundtrack } from './audio'
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
-const foodChoices = ['Japanese / Sushi', 'Cha chaan teng', 'Korean', 'Italian / Pasta', "Let's decide later"]
+const foodChoices = ['Japanese / Sushi', 'Cha chaan teng', 'Korean', 'Italian / Pasta', "We can decide later"]
 const letterParagraphs = [
-  'One more thing.',
-  "I'm really looking forward to seeing you —\nand, honestly, I'm a little nervous too.",
-  "I haven't planned every detail perfectly,\nand part of me is probably more worried than I should be\nabout getting everything right.",
-  "So if you ever feel tired, don't feel well,\nor simply want to change the plan,\nplease tell me.",
-  'We can slow down, change things,\nor do absolutely nothing for a while.\nYou never have to stick to a plan\njust because it was “the plan.”',
-  "I think what I'm looking forward to most\nisn't getting every detail right.",
-  "It's simply getting to spend those few days with you.",
-  '— Claire',
+  'Dear Colie,',
+  'It still feels a little unreal that we’re finally going to meet.',
+  'I don’t need everything to go perfectly. If you’re tired, if you change your mind, or if there’s simply something you want to say, just tell me. You don’t have to overthink it with me.',
+  'And if there’s anywhere in Hong Kong you’d like to take me, or anything you’d like us to do together, I’d love to know.',
+  'I MISS U ❤️',
+  'It’ll be nice to finally be there with you.',
+  '你的,\nClaire',
+  '7/10-2026',
 ]
 const oliveLines = [
   'Claire asked me to keep something safe for you.',
@@ -237,8 +237,7 @@ export function App() {
   }, [stage, oliveLine])
   useEffect(() => {
     if (stage !== 'hidden-letter') return
-    const timers = [window.setTimeout(() => track.current.play('slide'), 1350), ...[1, 2, 3, 4, 5, 6, 7, 8].map((line, i) => window.setTimeout(() => setLetterCopy(line), 1750 + i * 650))]
-    timers.push(window.setTimeout(() => setLetterCopy(9), 1750 + 7 * 650 + 1000))
+    const timers = [window.setTimeout(() => track.current.play('slide'), 1350), ...[1, 2, 3, 4, 5, 6, 7, 8].map((line, i) => window.setTimeout(() => setLetterCopy(line), 2550 + i * 950))]
     return () => timers.forEach(clearTimeout)
   }, [stage])
   useEffect(() => {
@@ -365,8 +364,7 @@ export function App() {
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           <motion.div className="entry-atmosphere" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.4 }} />
           <AnimatePresence>{!filmEntered && <motion.div key="entry-copy" className="entry-copy" initial={false} exit={{ opacity: 0 }} animate={{ opacity: filmStarting ? 0 : 1 }} transition={{ duration: .5 }}>
-            <motion.p className="entry-for" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .9 }}>For Colette</motion.p>
-            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .65 }}>I made something for you.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>I made something for you, Colette.</motion.p>
           </motion.div>}</AnimatePresence>
           {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className="film-start" disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
@@ -377,7 +375,7 @@ export function App() {
       <motion.img ref={matchImage} className="match-envelope" src={media('sealed.webp')} alt="" aria-hidden="true"
         onLoad={() => { void matchImage.current?.decode().then(() => setMatchDecoded(true)).catch(() => setAssetFailed(true)) }}
         initial={false}
-        animate={matchEnvelope ? { left: planeX + planeW * .335, top: planeY + planeH * .4 - planeW * .4 * .129, width: planeW * .4, opacity: handoffReady ? 0 : 1 } : { left: planeX + planeW * .23, top: planeY + planeH * .29 - planeW * .55 * .129, width: planeW * .55, opacity: 0 }}
+        animate={matchEnvelope ? { left: planeX + planeW * .335, top: planeY + planeH * .4 - planeW * .4 * .129, width: planeW * .4, opacity: handoffReady ? 0 : 1 } : { left: planeX + planeW * .21, top: planeY + planeH * .27 - planeW * .60 * .129, width: planeW * .60, opacity: 0 }}
         transition={{ duration: reduced ? .2 : 1.1, opacity: { duration: .35 } }} />
       {stage === 'envelope' && <>
         <motion.button ref={openButton} className="envelope-hit" disabled={!handoffReady} aria-label="Open your invitation"
@@ -385,7 +383,7 @@ export function App() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: reduced ? .2 : .4 }}
           onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerCancel={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onClick={openEnvelope} />
         <motion.p className="open-hint" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-          style={{ top: Math.min(h - 65, planeY + planeH * .79) }} transition={{ duration: .9, delay: reduced ? .2 : .4 }}>Whenever you're ready.</motion.p>
+          style={{ top: Math.min(h - 65, planeY + planeH * .79) }} transition={{ duration: .9, delay: reduced ? .2 : .4 }}>Whenever you’re ready.</motion.p>
       </>}
       <AnimatePresence>
       {opened && <>
@@ -475,7 +473,7 @@ export function App() {
         </div> : <div className="invitation-copy summary-copy">
           <h1>October 22</h1>
           <p>{meetingConfirmed ? '12:00 PM · Hong Kong Airport' : 'Hong Kong Airport · We’ll confirm the time together'}</p>
-          <p className="first-stop">First stop:<br /><span>{foodChoice === "Let's decide later" ? "We'll decide together ♡" : foodChoice}</span></p>
+          <p className="first-stop">First stop:<br /><span>{foodChoice === "We can decide later" ? "We'll decide together ♡" : foodChoice}</span></p>
         </div>}
       </motion.article>}
       </AnimatePresence>
@@ -502,8 +500,7 @@ export function App() {
         <motion.article ref={letterCard} className="private-letter" tabIndex={-1} aria-label="A letter from Claire" initial={{ opacity: 0, y: 50, scale: .95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1.1, delay: 1.35 }}>
           <div className="letter-paper" aria-hidden="true" style={{ backgroundImage: `url(${media('card.webp')})` }} />
           <div className="letter-scroll">
-            {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 7 ? 'letter-signature' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
-            <motion.p className="letter-farewell" initial={{ opacity: 0 }} animate={{ opacity: letterCopy >= 9 ? 1 : 0 }} transition={{ duration: .6 }}>See you soon. ♡</motion.p>
+            {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 4 ? 'letter-miss' : i === 6 ? 'letter-signature' : i === 7 ? 'letter-date' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
           </div>
         </motion.article>
       </>}

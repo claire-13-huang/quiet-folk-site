@@ -32,14 +32,14 @@
 
 .food-copy h1{margin-bottom:16px}
 .food-choices{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;width:100%;max-width:470px}
-.food-choices .answer{font-size:28px}
+.food-choices .answer{font-size:30px}
 .food-choices .answer:last-child{grid-column:1/-1}
 .food-choices .answer[aria-pressed=true]{color:#342514;text-decoration:underline;text-underline-offset:6px}
 .dessert-note{font-size:17px;line-height:1.4;min-height:24px;margin:12px 0 0;font-style:italic}
 .summary-copy p{font-size:21px;line-height:1.5;margin:0 0 24px;max-width:480px}
 .summary-copy .first-stop{margin:8px 0 0;font-size:18px}
 .first-stop span{display:inline-block;font-size:25px;margin-top:10px}
-@media(max-width:599px){.food-copy{inset:8% 10%}.food-copy .meeting-introduction{font-size:17px;margin-bottom:10px}.food-copy h1{font-size:26px;margin-bottom:10px}.food-choices{grid-template-columns:1fr;gap:0}.food-choices .answer{min-height:42px;font-size:21px;padding:6px 4px}.food-choices .answer:last-child{grid-column:auto}.dessert-note{margin-top:8px;font-size:16px}.summary-copy p{font-size:19px}.first-stop span{font-size:24px}}
+@media(max-width:599px){.food-copy{inset:8% 10%}.food-copy .meeting-introduction{font-size:17px;margin-bottom:10px}.food-copy h1{font-size:26px;margin-bottom:10px}.food-choices{grid-template-columns:1fr;gap:0}.food-choices .answer{min-height:42px;font-size:23px;padding:6px 4px}.food-choices .answer:last-child{grid-column:auto}.dessert-note{margin-top:8px;font-size:16px}.summary-copy p{font-size:19px}.first-stop span{font-size:24px}}
 
 @font-face{font-family:'Cormorant Garamond';src:url('/media/fonts/cormorant-500.ttf') format('truetype');font-weight:500;font-display:swap}
 @font-face{font-family:'EB Garamond';src:url('/media/fonts/eb-garamond-400.ttf') format('truetype');font-weight:400;font-display:swap}
@@ -73,3 +73,19 @@
 .letter-farewell{font-size:18px;text-align:center}
 @media(max-width:599px){.invitation-copy:has(.invitation-properly) h1{font-size:29px}.invitation-copy:has(.invitation-properly) .introduction{font-size:18px}.summary-copy{inset:8% 9%}.summary-copy p{font-size:19px;margin-bottom:16px}.summary-copy h1{margin-bottom:16px}.summary-copy .first-stop{font-size:17px}.summary-copy .first-stop span{font-size:23px}.letter-scroll{inset:12% 16% 15%;font-size:17px;line-height:1.32}.letter-scroll p{margin-bottom:13px}.letter-scroll .letter-title{font-size:29px}.letter-signature{font-size:22px}}
 .experience[data-stage=final-summary] .meeting-card{pointer-events:none}
+
+@font-face{font-family:'Kalam';src:url('/media/fonts/kalam-400.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'Caveat';src:url('/media/fonts/caveat.ttf') format('truetype');font-weight:400 700;font-display:swap}
+@font-face{font-family:'Ma Shan Zheng';src:url('/media/fonts/mashanzheng-signature.ttf') format('truetype');font-weight:400;font-display:swap}
+.entry-copy{max-width:700px;font-size:clamp(30px,2.8vw,42px);line-height:1.25}
+.film .film-start{font-size:23px;min-height:48px;padding:10px 16px}
+.entry-atmosphere{background:radial-gradient(ellipse at 78% 70%,#be84383b 0,transparent 48%),radial-gradient(ellipse at 22% 25%,#335b7e25,transparent 52%),linear-gradient(115deg,#06152fa6,#0c1c3588 60%,#14233366)}
+.match-envelope{filter:sepia(.12) saturate(.94) brightness(.91)}
+.private-letter{width:min(760px,calc(100% - 32px));height:min(780px,calc(100svh - 80px));margin-left:calc(min(760px,100vw - 32px) / -2);margin-top:calc(min(780px,100svh - 80px) / -2);color:#573c29}
+.letter-scroll{inset:12% 15% 14%;font-family:'Kalam','Segoe Print','Bradley Hand',cursive;font-size:21px;line-height:1.5;padding-right:6px}
+.letter-scroll p{margin:0 0 21px;white-space:pre-line}
+.letter-scroll .letter-title{font-family:'Caveat','Bradley Hand',cursive;font-size:40px;font-weight:500;line-height:1.1;margin-bottom:24px;transform:rotate(-1deg);transform-origin:left center}
+.letter-scroll .letter-signature{font-family:'Caveat','Ma Shan Zheng','Kaiti SC',STKaiti,cursive;font-size:35px;font-weight:500;font-style:normal;line-height:1.15;margin:22px 0 9px;transform:rotate(-1deg);transform-origin:left center}
+.letter-scroll .letter-miss{font-size:24px;color:#824743;letter-spacing:.025em;margin:24px 0}
+.letter-scroll .letter-date{font-family:'Caveat','Bradley Hand',cursive;font-size:24px;margin-top:8px}
+@media(max-width:599px){.entry-copy{font-size:31px;max-width:330px}.film .film-start{font-size:22px}.letter-scroll{inset:12% 14% 14%;font-size:20px;line-height:1.52}.letter-scroll p{margin-bottom:23px}.letter-scroll .letter-title{font-size:37px}.letter-scroll .letter-signature{font-size:34px}.letter-scroll .letter-miss{font-size:23px}}

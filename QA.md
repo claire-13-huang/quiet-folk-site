@@ -1,22 +1,27 @@
-# Targeted Olive ending acceptance — 2026-10-07
+# Focused handmade polish acceptance — 2026-10-07
 
-## Scope and preserved behavior
+## Preserved scope
 
-Only entry treatment, Scene 01 handoff, envelope hint and summary-to-private-letter ending changed. Opening and celebration runtime MP4s, their embedded audio, paper recordings, private-letter copy, meeting/invitation geometry and food-selection logic remain unchanged. No generated artwork, new dependency, production shortcut or additional question was introduced.
+Original opening and celebration video/audio, four characters, room and envelope artwork, invitation and meeting-card geometry, bounded second-answer behavior, food-state logic and Olive dialogue sequence remain unchanged. No new questions, generated artwork, audio library or production debug UI were added.
 
-## Runtime acceptance
+## Changes
 
-- Desktop 1440×900: the entry has restrained For Colette, delayed I made something for you., and Come in, with no recognizable character. The entry gesture started the inline opening at the beginning, unmuted. Only the final three seconds were sought for handoff testing; no full opening or celebration replay was performed.
-- At video end, the actual measured hold before the anchor appeared was 382 ms. The exact sealed image was already mounted and decoded. A 20 ms monitor found no undecoded visible anchor and no opacity gap throughout the film-to-desk transition. The room remained behind both layers. Visual screenshots showed the held final frame, receiving envelope and settled desk.
-- The handoff uses 350 ms hold plus 1100 ms movement/crossfade, then enables envelope interaction. The hint is 28 px desktop / 22 px mobile, warm ivory and close to the envelope.
-- A browser-only state jump populated the existing itinerary. After three seconds, it faded away; a 1.4-second restrained pan/zoom and reduced blur brought attention to Olive, retaining the room and other characters. The dialogue appeared after camera motion. Both dialogue clicks yielded the exact second and third lines. The old summary-side note is absent. The wax-sealed envelope appeared only after the last dialogue and stayed clear of the dialogue box.
-- Clicking the sealed letter removed the dialogue, recentered the background and moved/opened the envelope before the letter slid out. The existing eight HTML paragraphs reveal at 650 ms intervals, with See you soon. ♡ one second after the signature. Early sampling showed only the first paragraph and a partially fading second paragraph; the remaining paragraphs were invisible. Final sampling confirmed all paragraphs and farewell visible.
-- One mobile check at 390×844 used a touch-enabled Chromium context. Actual taps advanced all three dialogue lines and opened the sealed letter. The dialogue bounds were x20–370 and stayed in the viewport. During envelope movement its opacity was 1, height 172 px and the wax seal remained 98 px below the envelope top. Contained letter scrolling reached the signature and farewell inside the paper. No horizontal scrolling or page errors occurred.
+- Entry uses the exact I made something for you, Colette. text, 23 px desktop / 22 px mobile Come in, with subtle navy/amber atmosphere over the defocused source art.
+- The decoded, already-mounted match envelope retains the 350 ms hold and 1100 ms handoff. Its starting placement is closer to the film envelope; a slight warm/darker correction avoids a pale overlay. The readable 28/22 px hint uses Whenever you’re ready. with the specified curly apostrophe.
+- Existing staged invitation, centered celebration typography and approved schedule stationery are preserved. Food title precedes option rows; the five choices now end with We can decide later. The summary comparison is updated consistently; food choices use 30 px desktop / 23 px mobile type. A final typography-only spot check confirms the enlarged labels remain within the card.
+- Olive remains the story bridge into the sealed private letter. The letter contains exactly the specified eight sections, ending in 你的, / Claire and 7/10-2026. Old One more thing. and See you soon. text is absent from the letter. Reveals begin after the paper settles at 2550 ms, staggered by 950 ms. No text is rewritten or appended.
+- Local Kalam body text is 21 px desktop / 20 px mobile with increased line/paragraph spacing. Caveat and Ma Shan Zheng make the salutation and bilingual sign-off distinctly handwritten. All three fonts preload; publisher source links and complete OFL notices are included. Scrolling stays within the same cream paper.
 
-## Corrections within this pass
+## One focused desktop check — 1440×900
 
-Static review caught the dialogue animation overriding CSS centering and a zero-height envelope affecting wax-seal placement; both were corrected before visual acceptance. A moving-envelope screenshot exposed an opacity transition ending prematurely; its duration is now explicitly 1.9 seconds and the visible moving envelope was rechecked on mobile and desktop. The initial mobile automation context lacked touch support; it was replaced with a touch-enabled context. These targeted corrections did not replay either complete video. Preload links use the production base explicitly, avoiding development-path duplication.
+Entry, envelope, food and Olive-to-letter were checked once. The opening started at 0.01 seconds, unmuted and inline; audio decoding reached 41638 bytes. Only the final three seconds were sought for the envelope check, with no full opening or celebration replay. Real envelope-open and slide audio buffers started with durations 0.62/1.389 seconds and nonzero RMS 0.0346/0.0492; the same pair also played for the private letter. Original restrained gains remain 0.18/0.14.
+
+At 600 ms on food, every option was invisible and disabled. The rows then appeared and We can decide later was selected normally. Actual dialogue clicks reached the sealed private letter. An early sample was [1, 0.99, 0, 0, 0, 0, 0, 0], proving the whole letter was not shown instantly. Final HTML text matched all eight exact sections. All handwriting fonts loaded, including the Chinese sign-off. The 577 px paper viewport supports a small internal scroll through 678 px of content to the full signature/date. No horizontal scrolling or console errors occurred.
+
+## One mobile spot check — 390×844
+
+A touch-enabled context checked entry, food choices, actual Olive taps and the sealed letter. The body rendered in Kalam at 20 px. Early paragraph sampling again showed only the first section and a partially fading second section. Internal paper scrolling reached the exact date, whose bottom was 674 px within the 697 px content boundary. No horizontal scrolling, page errors or asset HTTP errors occurred. No video replay was performed on mobile.
 
 ## Publication
 
-Build and deployment use the editable public source checkout and the existing GitHub Pages workflow. Browser state jumps, screenshots, original source media and local tools are excluded from publication. Live verification compares published files with the exact production build.
+Only the edited source/documents and six new font/license files are included in the public source checkout. Original masters, references, user images, screenshots, raw downloads and browser test shortcuts remain excluded. npm run build performs the final typecheck and production build. Published files are compared with that exact build after GitHub Pages finishes.
