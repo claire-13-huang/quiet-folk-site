@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
+import { trackEvent } from './analytics'
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
@@ -310,7 +311,7 @@ export function App() {
       void toggleFullscreen().then(active => { if (active) enterFilm() })
       return
     }
-    if (videoFailed) { if (assetsReady) beginEnvelope(); return }
+    if (videoFailed) { if (assetsReady) { trackEvent('come_in'); beginEnvelope() } return }
     playPending.current = true
     track.current.unlock()
     track.current.claimVideo(element)
@@ -321,6 +322,7 @@ export function App() {
     element.defaultMuted = false
     element.volume = 0.85
     void element.play().then(() => {
+      trackEvent('come_in')
       entered.current = true
       setFilmEntered(true)
       setPlayBlocked(element.paused || document.hidden)
@@ -385,6 +387,7 @@ export function App() {
   const reveal = (line: number) => ({ opacity: stage === 'invitation-card' && copy >= line ? 1 : 0, y: copy >= line || reduced ? 0 : 9 })
   const openEnvelope = () => {
     if (stage !== 'envelope' || !assetsReady || !handoffReady) return
+    trackEvent('envelope_open')
     track.current.unlock(); track.current.play('paper'); setStage('opening')
   }
 
@@ -408,7 +411,7 @@ export function App() {
             initial={{ filter: 'blur(110px) brightness(0.32) saturate(0.65)', scale: 1.2 }}
             animate={{ filter: filmEntered ? 'blur(0px) brightness(1)' : 'blur(110px) brightness(0.32) saturate(0.65)', scale: filmEntered ? 1 : 1.2 }} transition={{ duration: 1.4 }}
             onPause={() => { if (entered.current && !filmFinished.current && !video.current?.ended) setPlayBlocked(true) }}
-            onEnded={() => { filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
+            onEnded={() => { trackEvent('scene01_complete'); filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           <motion.div className="entry-background" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.6 }} />
           <AnimatePresence>{!filmEntered && <motion.div className="entry-copy" initial={false} animate={{ opacity: filmStarting ? 0 : 1 }} exit={{ opacity: 0 }} transition={{ duration: .5 }}>
@@ -455,7 +458,7 @@ export function App() {
             <motion.p className="introduction invitation-properly" initial={{ opacity: 0 }} animate={reveal(3)} transition={{ duration: reduced ? .1 : .9 }}>but I still wanted to ask properly.</motion.p>
             <motion.h1 initial={{ opacity: 0 }} animate={reveal(4)} transition={{ duration: reduced ? .1 : 1 }}>Shall we make these few days in Hong Kong<br />our little getaway?</motion.h1>
             <motion.div initial={false} animate={{ opacity: copy >= 5 && stage === 'invitation-card' ? 1 : 0, y: copy >= 5 || reduced ? 0 : 6 }} transition={{ duration: .8 }} aria-hidden={copy < 5 || stage !== 'invitation-card'} inert={copy < 5 || stage !== 'invitation-card'}>
-              <Answers reduced={reduced} active={copy >= 5 && stage === 'invitation-card'} onYes={playCelebration} />
+              <Answers reduced={reduced} active={copy >= 5 && stage === 'invitation-card'} onYes={() => { trackEvent('invitation_yes'); playCelebration() }} />
             </motion.div>
           </div>
         </motion.article>
@@ -504,7 +507,7 @@ export function App() {
           <motion.p className="meeting-introduction" animate={{ opacity: meetingCopy >= 1 ? 1 : 0, y: meetingCopy >= 1 ? 0 : 8 }} transition={{ duration: .8 }}>Just to make sure I've got it right…</motion.p>
           <motion.h1 animate={{ opacity: meetingCopy >= 2 ? 1 : 0, y: meetingCopy >= 2 ? 0 : 8 }} transition={{ duration: .8 }}>October 22, 12:00 PM —<br />Hong Kong Airport?</motion.h1>
           <motion.div className="meeting-answers" animate={{ opacity: meetingCopy >= 3 ? 1 : 0 }} transition={{ duration: .8 }} inert={meetingCopy < 3}>
-            <button className="answer yes-answer" aria-pressed={meetingChoice === 'confirmed'} disabled={meetingCopy < 3 || meetingChoice !== null} onClick={() => { setMeetingConfirmed(true); setMeetingChoice('confirmed'); setStage('food-choice') }}>Yes, see you then ♡</button>
+            <button className="answer yes-answer" aria-pressed={meetingChoice === 'confirmed'} disabled={meetingCopy < 3 || meetingChoice !== null} onClick={() => { trackEvent('meeting_confirm'); setMeetingConfirmed(true); setMeetingChoice('confirmed'); setStage('food-choice') }}>Yes, see you then ♡</button>
             <button className="answer" disabled={meetingCopy < 3 || meetingChoice !== null} aria-pressed={meetingChoice === 'adjust'} onClick={() => setMeetingChoice('adjust')}>Let's adjust it</button>
           </motion.div>
           <p className="meeting-status" role="status" style={meetingChoice === 'adjust' ? { height: 40 } : undefined}>{meetingChoice === 'confirmed' ? 'See you then ♡' : meetingChoice === 'adjust' ? <>Of course —<br />we’ll figure it out together. ♡</> : ''}</p>
@@ -517,7 +520,7 @@ export function App() {
           <motion.p className="meeting-introduction" initial={{ opacity: 0 }} animate={{ opacity: foodCopy >= 1 ? 1 : 0 }} transition={{ duration: .6 }}>Okay, one more very important question…</motion.p>
           <motion.h1 initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodCopy >= 2 ? 1 : 0, y: foodCopy >= 2 ? 0 : 6 }} transition={{ duration: .6 }}>What should we eat?</motion.h1>
           <div className="food-choices">
-            {foodChoices.map((choice, i) => <motion.button key={choice} className="answer" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodCopy >= 3 + Math.floor(i / 2) ? 1 : 0, y: foodCopy >= 3 + Math.floor(i / 2) ? 0 : 6 }} transition={{ duration: .6 }} disabled={foodChoice !== null || foodCopy < 3 + Math.floor(i / 2)} aria-pressed={foodChoice === choice} onClick={() => setFoodChoice(choice)}>{choice}</motion.button>)}
+            {foodChoices.map((choice, i) => <motion.button key={choice} className="answer" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodCopy >= 3 + Math.floor(i / 2) ? 1 : 0, y: foodCopy >= 3 + Math.floor(i / 2) ? 0 : 6 }} transition={{ duration: .6 }} disabled={foodChoice !== null || foodCopy < 3 + Math.floor(i / 2)} aria-pressed={foodChoice === choice} onClick={() => { trackEvent('food_choice', choice); setFoodChoice(choice) }}>{choice}</motion.button>)}
           </div>
           <motion.p className="dessert-note" role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: foodChoice ? 1 : 0, y: foodChoice ? 0 : 6 }} transition={{ duration: .4 }}>And maybe dessert after? :)</motion.p>
         </div> : <div className="invitation-copy summary-copy">
@@ -538,7 +541,7 @@ export function App() {
       </AnimatePresence>
       {stage === 'olive-npc' && <motion.button className="secret-envelope" aria-label="Open the sealed private letter" disabled={!secretReady} style={secretPosition}
         initial={{ opacity: 0, y: 6 }} animate={{ opacity: secretReady ? 1 : 0, y: secretReady ? 0 : 6 }} whileHover={{ y: -4 }} transition={{ duration: .8 }}
-        onClick={() => { track.current.unlock(); track.current.play('paper'); setStage('hidden-letter') }}>
+        onClick={() => { track.current.unlock(); track.current.play('paper'); trackEvent('secret_letter_open'); setStage('hidden-letter') }}>
         <img src={media('sealed.webp')} alt="" /><span className="wax-seal" aria-hidden="true" />
       </motion.button>}
       {stage === 'hidden-letter' && <>

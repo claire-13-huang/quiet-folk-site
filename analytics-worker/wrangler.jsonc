@@ -1,0 +1,7 @@
+{
+ "name":"quiet-folk-analytics", "main":"src/worker.js", "compatibility_date":"2026-10-07",
+ "account_id":"ed6a0275691234513a204e3cf9eb3020", "workers_dev":true,
+ "observability":{"enabled":false},
+ "rules":[{"type":"Text","globs":["**/*.html","**/*.css","**/*.txt"],"fallthrough":true}],
+ "d1_databases":[{"binding":"DB","database_name":"quiet-folk-analytics","database_id":"df25d393-a240-4164-82d3-129c05fd76e2","migrations_dir":"migrations"}]
+}
