@@ -1,0 +1,8 @@
+.git
+node_modules
+output
+.playwright-cli
+*.png
+第一幕最终视频.mp4
+
+!public/**/*.png
