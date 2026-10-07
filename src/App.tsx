@@ -518,7 +518,7 @@ export function App() {
           <div className="music-panel-heading"><span>Music</span><button className="music-switch" aria-pressed={musicEnabled} onClick={() => { const enabled = !musicEnabled; setMusicEnabled(enabled); track.current.setMusicEnabled(enabled) }}>{musicEnabled ? 'On' : 'Off'}</button></div>
           <label htmlFor="music-volume">Volume <span>{musicVolume}%</span></label>
           <input id="music-volume" type="range" min="0" max="100" value={musicVolume} onChange={event => { const volume = Number(event.target.value); setMusicVolume(volume); track.current.setMusicVolume(volume / 100) }} />
-          <p>Pauses during films.</p>
+          <p>Softens during films.</p>
         </div>}
       </div>
     </main>

@@ -19,12 +19,12 @@ export class Soundtrack {
   private musicVolume = .25
   resumeMusic() {
     const buffer = this.buffers.get('bgm'), context = this.context
-    if (!this.musicEnabled || this.music || this.video || document.hidden || !buffer || !context || context.state !== 'running') return
+    if (!this.musicEnabled || this.music || document.hidden || !buffer || !context || context.state !== 'running') return
     const source = context.createBufferSource(), gain = context.createGain()
     source.buffer = buffer
     source.loop = true
     gain.gain.setValueAtTime(0, context.currentTime)
-    gain.gain.linearRampToValueAtTime(this.musicVolume, context.currentTime + .6)
+    gain.gain.linearRampToValueAtTime(this.musicVolume * (this.video ? .12 : 1), context.currentTime + .6)
     source.connect(gain); gain.connect(context.destination)
     this.music = source; this.musicGain = gain; this.musicStarted = context.currentTime
     source.start(0, this.musicOffset % buffer.duration)
@@ -46,7 +46,7 @@ export class Soundtrack {
       const gain = this.musicGain.gain, now = this.context.currentTime
       gain.cancelScheduledValues(now)
       gain.setValueAtTime(gain.value, now)
-      gain.setTargetAtTime(this.musicVolume, now, .05)
+      gain.setTargetAtTime(this.musicVolume * (this.video ? .12 : 1), now, .15)
     }
   }
   preload() {
@@ -61,8 +61,14 @@ export class Soundtrack {
     }))
     return this.data
   }
-  claimVideo(video: HTMLVideoElement) { this.pause(); this.video = video }
-  releaseVideo(video: HTMLVideoElement | null) { if (this.video === video) { this.video = null; this.resumeMusic() } }
+  claimVideo(video: HTMLVideoElement) {
+    this.video?.pause()
+    this.tracks.forEach(track => track.stop()); this.tracks.clear()
+    this.video = video
+    this.setMusicVolume(this.musicVolume)
+    this.resumeMusic()
+  }
+  releaseVideo(video: HTMLVideoElement | null) { if (this.video === video) { this.video = null; this.setMusicVolume(this.musicVolume); this.resumeMusic() } }
   unlock() {
     this.context ??= new AudioContext()
     const context = this.context
