@@ -363,8 +363,12 @@ export function App() {
             onEnded={() => { filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           <motion.div className="entry-background" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.6 }} />
-          {!filmEntered && <div className="entry-copy">Hi, it’s Claire. I made something for you.</div>}
-          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered && !videoFailed ? ' entry-button' : ''}`} style={!filmEntered && !videoFailed ? { left: w / 2, top: h / 2 + Math.min(h, w * 941 / 1672) * .118, width: Math.max(120, Math.min(w, h * 1672 / 941) * .148), height: Math.max(44, Math.min(h, w * 941 / 1672) * .066) } : undefined} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
+          <AnimatePresence>{!filmEntered && <motion.div className="entry-copy" initial={false} animate={{ opacity: filmStarting ? 0 : 1 }} exit={{ opacity: 0 }} transition={{ duration: .5 }}>
+            <motion.p initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? .1 : 1, delay: reduced ? 0 : .4 }}>Hi, it’s Claire.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? .1 : 1, delay: reduced ? 0 : 1.25 }}>I made something for you.</motion.p>
+            <motion.div className="entry-ornament" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .9, delay: reduced ? 0 : 2.1 }}><span /><svg viewBox="0 0 40 40"><path d="M20 34 5 19C-5 7 12-3 20 9 28-3 45 7 35 19Z" /></svg><span /></motion.div>
+          </motion.div>}</AnimatePresence>
+          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered && !videoFailed ? ' entry-button' : ''}`} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
           </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}

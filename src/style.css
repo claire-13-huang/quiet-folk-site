@@ -88,7 +88,14 @@
 .letter-scroll .letter-date{font-family:'Caveat','Bradley Hand',cursive;font-size:24px;margin-top:8px}
 @media(max-width:599px){.entry-copy{font-size:31px;max-width:330px}.film .film-start{font-size:22px}.letter-scroll{inset:12% 14% 14%;font-size:20px;line-height:1.52}.letter-scroll p{margin-bottom:23px}.letter-scroll .letter-title{font-size:37px}.letter-scroll .letter-signature{font-size:34px}.letter-scroll .letter-miss{font-size:23px}}
 
-.entry-background{position:absolute;inset:0;pointer-events:none;background:#302317 url('/media/entry-study.png') center/contain no-repeat}
-.entry-copy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.film .entry-button{transform:translate(-50%,-50%);min-width:0;padding:0;border:0;border-radius:30px;background:transparent;color:transparent;text-shadow:none;box-shadow:none;animation:none}
-.film .entry-button:hover{background:#ffe6ac0a}
+.entry-background{position:absolute;inset:0;pointer-events:none;background:#302317 url('/media/entry-study-clean.png') center/cover no-repeat}
+.entry-copy{position:absolute;z-index:2;left:50%;top:45%;transform:translate(-50%,-50%);width:94%;max-width:1400px;height:auto;overflow:visible;clip-path:none;white-space:normal;text-align:center;font-family:'Cormorant Garamond',Baskerville,Georgia,serif;font-weight:500;font-size:clamp(34px,5.1vw,86px);line-height:1.05;letter-spacing:-.025em;color:#f7e9ce;text-shadow:0 2px 6px #2b180e40}
+.entry-copy p{margin:0}.entry-copy p+p{font-size:.88em;margin-top:5px}
+.entry-ornament{display:flex;align-items:center;justify-content:center;gap:14px;width:25vw;max-width:420px;margin:24px auto 0;color:#e1b96f}
+.entry-ornament span{flex:1;height:1px;background:currentColor}.entry-ornament svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.5;overflow:visible}
+.film .entry-button{top:62%;transform:translate(-50%,-50%);min-width:210px;min-height:48px;padding:4px 30px;border:1px solid #e1b96f;border-radius:40px;background:#41291520;color:#f7e9ce;font-family:Baskerville,'Times New Roman',serif;font-style:italic;font-size:clamp(27px,2.5vw,40px);letter-spacing:0;text-shadow:none;box-shadow:0 0 0 1px #e1b96f20;animation:opening-cta 1s ease 2.65s both;transition:background .4s,box-shadow .4s}
+.film .entry-button::before,.film .entry-button::after{content:'';position:absolute;top:50%;width:5vw;max-width:86px;height:1px;background:#e1b96f}.film .entry-button::before{right:100%}.film .entry-button::after{left:100%}
+.film .entry-button:hover{background:#dcb27316;box-shadow:0 0 15px #e1b96f20}
+@keyframes opening-cta{from{opacity:0;visibility:hidden}to{opacity:1;visibility:visible}}
+@media(prefers-reduced-motion:reduce){.film .entry-button{animation-duration:.1s;animation-delay:0s}}
+@media(max-width:599px){.entry-background{background-position:28% center}.entry-copy{top:43%;font-size:36px;width:96%;line-height:1.12}.entry-copy p+p{font-size:27px;margin-top:12px}.entry-ornament{width:230px;margin-top:24px}.entry-ornament svg{width:27px;height:27px}.film .entry-button{top:59%;min-width:168px;font-size:29px}.film .entry-button::before,.film .entry-button::after{width:35px}}
