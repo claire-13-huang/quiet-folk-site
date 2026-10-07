@@ -363,11 +363,8 @@ export function App() {
             onEnded={() => { filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
           <motion.div className="entry-background" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.6 }} />
-          <AnimatePresence>{!filmEntered && <motion.div key="entry-copy" className="entry-copy" initial={false} exit={{ opacity: 0 }} animate={{ opacity: filmStarting ? 0 : 1 }} transition={{ duration: .5 }}>
-            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .35 }}>Hi, it’s Claire.</motion.p>
-            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .95 }}>I made something for you.</motion.p>
-          </motion.div>}</AnimatePresence>
-          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered ? ' entry-button' : ''}`} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
+          {!filmEntered && <div className="entry-copy">Hi, it’s Claire. I made something for you.</div>}
+          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered && !videoFailed ? ' entry-button' : ''}`} style={!filmEntered && !videoFailed ? { left: w / 2, top: h / 2 + Math.min(h, w * 941 / 1672) * .118, width: Math.max(120, Math.min(w, h * 1672 / 941) * .148), height: Math.max(44, Math.min(h, w * 941 / 1672) * .066) } : undefined} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
           </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}
