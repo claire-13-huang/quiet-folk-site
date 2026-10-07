@@ -46,7 +46,6 @@
 .entry-copy{position:absolute;z-index:2;left:50%;top:45%;transform:translate(-50%,-50%);width:calc(100% - 48px);max-width:640px;text-align:center;font-family:'Cormorant Garamond',Baskerville,Georgia,serif;font-weight:500;font-size:clamp(26px,2.5vw,36px);line-height:1.3;color:#f4e6cf;text-shadow:0 2px 18px #061020}
 .entry-copy p{margin:0}.entry-copy .entry-for{font-family:'EB Garamond',Baskerville,Georgia,serif;font-size:19px;letter-spacing:.1em;color:#d7bd91;margin-bottom:22px}
 .film::before{background:url('/media/poster.webp') center/cover;filter:blur(110px) brightness(.32) saturate(.65);transform:scale(1.25)}
-.entry-atmosphere{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 77% 72%,#ad6b2e25 0,transparent 40%),linear-gradient(115deg,#06152fbd,#0c1c35a6 60%,#14233377);mix-blend-mode:normal}
 .film .film-start{z-index:3;bottom:auto;top:58%;font-size:19px;letter-spacing:.06em;animation:entry-button 1.5s ease both;padding:8px 12px}
 @keyframes entry-button{0%,65%{opacity:0}100%{opacity:1}}
 .match-envelope{position:absolute;z-index:12;height:auto;pointer-events:none}
@@ -79,7 +78,6 @@
 @font-face{font-family:'Ma Shan Zheng';src:url('/media/fonts/mashanzheng-signature.ttf') format('truetype');font-weight:400;font-display:swap}
 .entry-copy{max-width:700px;font-size:clamp(30px,2.8vw,42px);line-height:1.25}
 .film .film-start{font-size:23px;min-height:48px;padding:10px 16px}
-.entry-atmosphere{background:radial-gradient(ellipse at 78% 70%,#be84383b 0,transparent 48%),radial-gradient(ellipse at 22% 25%,#335b7e25,transparent 52%),linear-gradient(115deg,#06152fa6,#0c1c3588 60%,#14233366)}
 .match-envelope{filter:sepia(.12) saturate(.94) brightness(.91)}
 .private-letter{width:min(760px,calc(100% - 32px));height:min(780px,calc(100svh - 80px));margin-left:calc(min(760px,100vw - 32px) / -2);margin-top:calc(min(780px,100svh - 80px) / -2);color:#573c29}
 .letter-scroll{inset:12% 15% 14%;font-family:'Kalam','Segoe Print','Bradley Hand',cursive;font-size:21px;line-height:1.5;padding-right:6px}
@@ -89,3 +87,12 @@
 .letter-scroll .letter-miss{font-size:24px;color:#824743;letter-spacing:.025em;margin:24px 0}
 .letter-scroll .letter-date{font-family:'Caveat','Bradley Hand',cursive;font-size:24px;margin-top:8px}
 @media(max-width:599px){.entry-copy{font-size:31px;max-width:330px}.film .film-start{font-size:22px}.letter-scroll{inset:12% 14% 14%;font-size:20px;line-height:1.52}.letter-scroll p{margin-bottom:23px}.letter-scroll .letter-title{font-size:37px}.letter-scroll .letter-signature{font-size:34px}.letter-scroll .letter-miss{font-size:23px}}
+
+.entry-background{position:absolute;inset:-70px;pointer-events:none;background:url('/media/entry-study.png') center/cover no-repeat;filter:blur(8px) brightness(.8);transform:scale(1.08)}
+.entry-background::after{content:'';position:absolute;inset:0;backdrop-filter:blur(55px);mask-image:radial-gradient(ellipse 44% 32% at 50% 50%,#000 65%,transparent 100%)}
+.entry-copy{top:44%;max-width:720px;font-size:clamp(30px,3vw,43px);line-height:1.3;letter-spacing:.012em;color:#f4e6cd;text-shadow:0 2px 14px #2b180e88}
+.entry-copy p+p{margin-top:12px;font-size:.88em;letter-spacing:.016em}
+.film .entry-button{top:59%;min-width:152px;padding:9px 26px;border:1px solid #d7b780bb;border-radius:30px;background:#3c231b26;box-shadow:0 0 16px #d7b7800c;font-size:23px;letter-spacing:.04em;animation:opening-cta .9s ease 1.65s both;transition:background .4s,box-shadow .4s,border-color .4s}
+.film .entry-button:hover{background:#ad845b20;border-color:#f0d8a7;box-shadow:0 0 18px #d7b78020}
+@keyframes opening-cta{from{opacity:0}to{opacity:1}}
+@media(max-width:599px){.entry-background{background-position:28% center}.entry-background::after{mask-image:radial-gradient(ellipse 95% 36% at 50% 50%,#000 65%,transparent 100%)}.entry-copy{width:calc(100% - 32px);max-width:360px;font-size:31px;top:43%;line-height:1.3}.entry-copy p+p{font-size:27px;margin-top:14px}.film .entry-button{font-size:22px;top:58%}}

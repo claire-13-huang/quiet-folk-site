@@ -6,7 +6,7 @@ Original opening and celebration video/audio, four characters, room and envelope
 
 ## Changes
 
-- Entry uses the exact I made something for you, Colette. text, 23 px desktop / 22 px mobile Come in, with subtle navy/amber atmosphere over the defocused source art.
+- Entry uses the latest supplied study PNG unchanged, with CSS defocus. The two exact lines are Hi, it’s Claire. and I made something for you., followed by Come in. Targeted checks at 1440 × 900 and 390 × 844 confirm layout and no horizontal scrolling; subsequent story behavior is unchanged.
 - The decoded, already-mounted match envelope retains the 350 ms hold and 1100 ms handoff. Its starting placement is closer to the film envelope; a slight warm/darker correction avoids a pale overlay. The readable 28/22 px hint uses Whenever you’re ready. with the specified curly apostrophe.
 - Existing staged invitation, centered celebration typography and approved schedule stationery are preserved. Food title precedes option rows; the five choices now end with We can decide later. The summary comparison is updated consistently; food choices use 30 px desktop / 23 px mobile type. A final typography-only spot check confirms the enlarged labels remain within the card.
 - Olive remains the story bridge into the sealed private letter. The letter contains exactly the specified eight sections, ending in 你的, / Claire and 7/10-2026. Old One more thing. and See you soon. text is absent from the letter. Reveals begin after the paper settles at 2550 ms, staggered by 950 ms. No text is rewritten or appended.

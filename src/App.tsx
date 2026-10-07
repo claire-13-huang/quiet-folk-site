@@ -362,11 +362,12 @@ export function App() {
             onPause={() => { if (entered.current && !filmFinished.current && !video.current?.ended) setPlayBlocked(true) }}
             onEnded={() => { filmFinished.current = true; track.current.releaseVideo(video.current); setFilmEnded(true) }}
             onError={() => setVideoFailed(true)} src={`${media('opening.mp4')}?v=original-audio`} />
-          <motion.div className="entry-atmosphere" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.4 }} />
+          <motion.div className="entry-background" aria-hidden="true" initial={false} animate={{ opacity: filmEntered ? 0 : 1 }} transition={{ duration: 1.6 }} />
           <AnimatePresence>{!filmEntered && <motion.div key="entry-copy" className="entry-copy" initial={false} exit={{ opacity: 0 }} animate={{ opacity: filmStarting ? 0 : 1 }} transition={{ duration: .5 }}>
-            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>I made something for you, Colette.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .35 }}>Hi, it’s Claire.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .95 }}>I made something for you.</motion.p>
           </motion.div>}</AnimatePresence>
-          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className="film-start" disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
+          {(!filmEntered || playBlocked || videoFailed) && !assetFailed && <button className={`film-start${!filmEntered ? ' entry-button' : ''}`} disabled={filmStarting || (videoFailed && !assetsReady)} onClick={enterFilm}>
             {videoFailed ? 'Open your invitation' : filmEntered ? 'Resume' : 'Come in'}
           </button>}
           {assetFailed && <button className="film-start" onClick={() => window.location.reload()}>Try loading your invitation again</button>}
