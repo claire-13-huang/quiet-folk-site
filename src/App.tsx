@@ -92,6 +92,39 @@ function Answers({ onYes, reduced, active }: { onYes: () => void; reduced: boole
 export function App() {
   const reduced = !!useReducedMotion()
   const { w, h } = useViewport()
+  const [fullscreen, setFullscreen] = useState(!!document.fullscreenElement)
+  const [fullscreenError, setFullscreenError] = useState('')
+  const fullscreenPending = useRef(false)
+  const toggleFullscreen = useCallback(async () => {
+    if (fullscreenPending.current) return false
+    fullscreenPending.current = true
+    setFullscreenError('')
+    try {
+      if (document.fullscreenElement) { await document.exitFullscreen(); return false }
+      if (!document.fullscreenEnabled || !document.documentElement.requestFullscreen) {
+        setFullscreenError('Fullscreen is unavailable in this browser. Please open this invitation in a browser that supports fullscreen.')
+        return false
+      }
+      await document.documentElement.requestFullscreen()
+      return !!document.fullscreenElement
+    } catch {
+      setFullscreenError('Please click the fullscreen button to try again.')
+      return false
+    } finally { fullscreenPending.current = false }
+  }, [])
+  useEffect(() => {
+    const sync = () => setFullscreen(!!document.fullscreenElement)
+    const shortcut = (event: KeyboardEvent) => {
+      if (event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return
+      if (((event.metaKey || event.ctrlKey) && event.code === 'Digit9') || (!event.metaKey && !event.ctrlKey && !event.altKey && event.code === 'KeyF')) {
+        event.preventDefault()
+        void toggleFullscreen()
+      }
+    }
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('keydown', shortcut)
+    return () => { document.removeEventListener('fullscreenchange', sync); document.removeEventListener('keydown', shortcut) }
+  }, [toggleFullscreen])
   const [musicOpen, setMusicOpen] = useState(false)
   const [musicEnabled, setMusicEnabled] = useState(true)
   const [musicVolume, setMusicVolume] = useState(25)
@@ -273,6 +306,10 @@ export function App() {
   const enterFilm = () => {
     const element = video.current
     if (!element || playPending.current) return
+    if (!entered.current && !document.fullscreenElement) {
+      void toggleFullscreen().then(active => { if (active) enterFilm() })
+      return
+    }
     if (videoFailed) { if (assetsReady) beginEnvelope(); return }
     playPending.current = true
     track.current.unlock()
@@ -518,6 +555,10 @@ export function App() {
         </motion.article>
       </>}
 
+      <button className="fullscreen-toggle" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-pressed={fullscreen} title="Fullscreen · F / Command + 9" onClick={() => { void toggleFullscreen() }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d={fullscreen ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6' : 'M3 9V3h6M15 3h6v6M3 15v6h6M15 21h6v-6'} /></svg>
+      </button>
+      {fullscreenError && <p className="fullscreen-error" role="status">{fullscreenError}</p>}
       <div className="music-control" onKeyDown={event => { if (event.key === 'Escape') setMusicOpen(false) }}>
         <button className="music-toggle" aria-label="Music settings" aria-expanded={musicOpen} aria-controls="music-panel" onClick={() => setMusicOpen(!musicOpen)}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13M9 8l11-2" /><ellipse cx="6" cy="18" rx="3" ry="2" /><ellipse cx="17" cy="16" rx="3" ry="2" />{!musicEnabled && <path d="M3 3 21 21" />}</svg>
