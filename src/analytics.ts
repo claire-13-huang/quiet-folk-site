@@ -9,7 +9,7 @@ function seconds() {
 function send(event: EventName | 'heartbeat' | 'session_end', food?: string, beacon = false) {
   try {
     if (!session) return
-    const body = JSON.stringify({ visitor_id: visitor, session_id: session, event_id: crypto.randomUUID(), event, timestamp: Date.now(), active_seconds: Math.min(86400, seconds()), ...(food ? { food } : {}) })
+    const body = JSON.stringify({ visitor_id: visitor, session_id: session, event_id: crypto.randomUUID(), event, timestamp: Date.now(), active_seconds: Math.min(86400, seconds()), page_path: location.pathname, ...(food ? { food } : {}) })
     if (beacon && navigator.sendBeacon?.(endpoint, new Blob([body], { type: 'text/plain' }))) return
     pending = pending.then(async () => {
       try { await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body, keepalive: true, credentials: 'omit', signal: AbortSignal.timeout(5000) }) } catch { /* Analytics is optional and never interrupts the invitation. */ }
@@ -22,12 +22,16 @@ export function trackEvent(event: EventName, food?: string) {
   send(event, food)
 }
 try {
-  session = crypto.randomUUID()
-  try {
-    const stored = localStorage.getItem('quiet-folk-visitor')
-    visitor = stored && /^[0-9a-f-]{36}$/i.test(stored) ? stored : crypto.randomUUID()
+  const invitationOrigin = location.origin === 'https://october-with-you.vercel.app' || location.origin === 'https://claire-13-huang.github.io'
+  const adminPath = /(^|\/)admin(\/|$)/.test(location.pathname)
+  if (invitationOrigin && !adminPath) {
+  const stored = localStorage.getItem('quiet-folk-visitor')
+  if (stored) visitor = stored
+  else {
+    visitor = crypto.randomUUID()
     localStorage.setItem('quiet-folk-visitor', visitor)
-  } catch { visitor = crypto.randomUUID() }
+  }
+  session = crypto.randomUUID()
   visibleSince = document.hidden ? null : performance.now()
   send('page_open')
   const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
@@ -50,4 +54,5 @@ try {
       session = crypto.randomUUID(); active = 0; visibleSince = document.hidden ? null : performance.now(); once.clear(); send('page_open')
     }
   })
-} catch { /* Unsupported browsers continue with the invitation normally. */ }
+  }
+} catch { session = ''; /* If identity cannot persist, skip tracking rather than inventing new visitors. */ }
