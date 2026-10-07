@@ -483,9 +483,9 @@ export function App() {
       {stage === 'olive-npc' && <motion.button key="olive-dialogue" ref={dialogue} className="olive-dialogue" aria-label={`Olive: ${oliveLines[oliveLine]}`} disabled={!oliveReady}
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: oliveReady ? 1 : 0, y: oliveReady ? 0 : 12 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: .65 }}
         onClick={() => { if (oliveLine < 2) setOliveLine(oliveLine + 1) }}>
-        <span className="olive-name">Olive</span>
-        <AnimatePresence mode="wait"><motion.span className="olive-line" key={oliveLine} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: .3 }}>{oliveLines[oliveLine]}</motion.span></AnimatePresence>
-        {oliveLine < 2 && <span className="dialogue-hint">Continue</span>}
+        <motion.span className="olive-name" initial={{ opacity: 0 }} animate={{ opacity: oliveReady ? 1 : 0 }} transition={{ duration: reduced ? .1 : .6, delay: reduced ? 0 : .12 }}>Olive</motion.span>
+        <AnimatePresence mode="wait"><motion.span className="olive-line" key={oliveLine} initial={{ opacity: 0, y: 4 }} animate={{ opacity: oliveReady ? 1 : 0, y: oliveReady ? 0 : 4 }} exit={{ opacity: 0, y: -3, transition: { duration: .2, delay: 0 } }} transition={{ duration: reduced ? .1 : .65, delay: reduced ? 0 : .35 }}>{oliveLines[oliveLine]}</motion.span></AnimatePresence>
+        {oliveLine < 2 && <motion.span key={`continue-${oliveLine}`} className="dialogue-hint" initial={{ opacity: 0 }} animate={{ opacity: oliveReady ? 1 : 0 }} transition={{ duration: reduced ? .1 : .6, delay: reduced ? 0 : 1 }}>Continue</motion.span>}
       </motion.button>}
       </AnimatePresence>
       {stage === 'olive-npc' && <motion.button className="secret-envelope" aria-label="Open the sealed private letter" disabled={!secretReady} style={secretPosition}
