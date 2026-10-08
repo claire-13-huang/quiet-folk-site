@@ -21,7 +21,7 @@ function deviceInfo(ua) {
  const os = /iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Windows/.test(ua)?'Windows':/Mac OS/.test(ua)?'macOS':/Linux/.test(ua)?'Linux':'Other';
  return {device,browser,os};
 }
-async function collect(request,env) {
+async function collect(request,env,ctx) {
  const origin=request.headers.get('Origin');
  if (!origins.has(origin)) return json({error:'Origin not allowed'},403);
  const cors={'Access-Control-Allow-Origin':origin,'Vary':'Origin','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
@@ -53,6 +53,10 @@ async function collect(request,env) {
   await env.DB.batch(analyticsWrites);
   console.warn('Notification storage unavailable; analytics event retained');
  }
+ const ip=request.headers.get('CF-Connecting-IP')?.trim();
+ const requestIP=ip && ip.length<=45 && /^[0-9a-fA-F:.]+$/.test(ip)?ip:'不可用';
+ // Delivery runs outside the request response and analytics transaction.
+ ctx.waitUntil(deliverNotifications(env,fetch,Date.now(),{session:data.session_id,ip:requestIP}).catch(()=>console.warn('Notification delivery deferred')));
  return json({ok:true},200,cors);
 }
 async function overview(env,range,hideTests=true) {
@@ -76,10 +80,10 @@ async function overview(env,range,hideTests=true) {
  }
  return {metrics,counts:counts.results,chart:chart.results,sessions:recent.results,food:food.results,replays:replays.count,funnel,range,now:Date.now()};
 }
-export default {async scheduled(_event,env,ctx) { ctx.waitUntil(deliverNotifications(env)); },async fetch(request,env) {
+export default {async scheduled(_event,env,ctx) { ctx.waitUntil(deliverNotifications(env)); },async fetch(request,env,ctx) {
  const path=new URL(request.url).pathname;
  try {
- if(path==='/collect') return await collect(request,env);
+ if(path==='/collect') return await collect(request,env,ctx);
  if(path==='/health') return json({ok:true});
  if(path==='/admin'||path.startsWith('/admin/')) {
  if(!await authorized(request,env)) return new Response('Authentication required',{status:401,headers:{...headers,'WWW-Authenticate':'Basic realm="Private analytics", charset="UTF-8"'}});
