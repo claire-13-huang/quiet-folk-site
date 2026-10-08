@@ -35,7 +35,8 @@ function useViewport() {
   useEffect(() => {
     const resize = () => setSize({ w: window.innerWidth, h: window.innerHeight })
     window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
+    window.addEventListener('orientationchange', resize)
+    return () => { window.removeEventListener('resize', resize); window.removeEventListener('orientationchange', resize) }
   }, [])
   return size
 }
@@ -99,6 +100,9 @@ function Answers({ onYes, reduced, active }: { onYes: () => void; reduced: boole
 export function App() {
   const reduced = !!useReducedMotion()
   const { w, h } = useViewport()
+  const [mobile] = useState(() => /iPhone|iPad|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches))
+  const [orientationGate, setOrientationGate] = useState(false)
+  const mobileEntryReady = useRef(false)
   const [fullscreen, setFullscreen] = useState(!!document.fullscreenElement)
   const [fullscreenError, setFullscreenError] = useState('')
   const fullscreenPending = useRef(false)
@@ -109,16 +113,16 @@ export function App() {
     try {
       if (document.fullscreenElement) { await document.exitFullscreen(); return false }
       if (!document.fullscreenEnabled || !document.documentElement.requestFullscreen) {
-        setFullscreenError('Fullscreen is unavailable in this browser. Please open this invitation in a browser that supports fullscreen.')
+        if (!mobile) setFullscreenError('Please click the fullscreen button to try again.')
         return false
       }
       await document.documentElement.requestFullscreen()
       return !!document.fullscreenElement
     } catch {
-      setFullscreenError('Please click the fullscreen button to try again.')
+      if (!mobile) setFullscreenError('Please click the fullscreen button to try again.')
       return false
     } finally { fullscreenPending.current = false }
-  }, [])
+  }, [mobile])
   useEffect(() => {
     const sync = () => setFullscreen(!!document.fullscreenElement)
     const shortcut = (event: KeyboardEvent) => {
@@ -312,7 +316,8 @@ export function App() {
   const enterFilm = () => {
     const element = video.current
     if (!element || playPending.current) return
-    if (!entered.current && !document.fullscreenElement) {
+    if (mobile && !entered.current && !mobileEntryReady.current) { setOrientationGate(true); return }
+    if (!mobile && !entered.current && !document.fullscreenElement) {
       void toggleFullscreen().then(active => { if (active) enterFilm() })
       return
     }
@@ -339,6 +344,19 @@ export function App() {
       playPending.current = false
       setFilmStarting(false)
     })
+  }
+
+  const continueMobile = () => {
+    if (w < h || playPending.current) return
+    mobileEntryReady.current = true
+    setOrientationGate(false)
+    // Both calls stay in this tap. Fullscreen never controls whether video can start.
+    try {
+      if (!document.fullscreenElement && document.fullscreenEnabled && typeof document.documentElement.requestFullscreen === 'function') {
+        void document.documentElement.requestFullscreen().catch(() => {})
+      }
+    } catch { /* Mobile browsers may decline fullscreen; landscape remains usable. */ }
+    enterFilm()
   }
 
   const playCelebration = () => {
@@ -389,7 +407,7 @@ export function App() {
   const secretWidth = w < 600 ? 168 : 190
   const secretPosition = { left: w < 600 ? w * .29 : w * .27, top: w < 600 ? 205 : h * .59, width: secretWidth }
   const opened = stage === 'opening' || stage === 'invitation-card'
-  const planeW = Math.max(w, Math.min(h * 16 / 9, w * 1.35))
+  const planeW = mobile ? Math.min(w, h * 16 / 9) : Math.max(w, Math.min(h * 16 / 9, w * 1.35))
   const planeH = planeW * 9 / 16
   const planeX = (w - planeW) / 2, planeY = (h - planeH) / 2
   const startWidth = planeW * 0.362
@@ -405,7 +423,7 @@ export function App() {
   }
 
   return <MotionConfig reducedMotion="user" transition={{ type: 'tween', ease }}>
-    <main className="experience" onKeyDown={event => { if (event.key === 'Escape') setActiveFriend(null) }} data-stage={stage} aria-label="An invitation for Colette">
+    <main className="experience" data-mobile={mobile} onKeyDown={event => { if (event.key === 'Escape') setActiveFriend(null) }} data-stage={stage} aria-label="An invitation for Colette">
       <motion.div className="room-fill" aria-hidden="true" animate={{ filter: extract ? 'blur(25px) brightness(0.42)' : 'blur(25px) brightness(0.62)' }} transition={{ duration: reduced ? .2 : 2, delay: extract ? .4 : 0 }} />
       <motion.div className="room" style={{ width: planeW, height: planeH, left: planeX, top: planeY, transformOrigin: '53.7% 58.3%' }}
         initial={false}
@@ -588,10 +606,21 @@ export function App() {
         </motion.section>}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {mobile && orientationGate && <motion.section className="orientation-overlay" role="dialog" aria-modal="true" aria-label="A little preparation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .45 }}>
+          <AnimatePresence mode="wait">
+            {w < h ? <motion.div key="portrait" className="orientation-copy" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: .4 }}>
+              <svg className="rotation-icon" viewBox="0 0 80 80" aria-hidden="true"><rect x="28" y="15" width="24" height="46" rx="4" /><path d="M36 55h8M12 35a28 28 0 0 1 43-23M55 4v9H46M68 45a28 28 0 0 1-43 23M25 76v-9h9" /></svg>
+              <h2>One tiny thing…</h2>
+              <p>For the best view,<br />turn off Portrait Orientation Lock<br />and rotate your phone sideways.</p>
+            </motion.div> : <motion.button key="landscape" className="orientation-continue" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .45 }} onClick={continueMobile}>Continue</motion.button>}
+          </AnimatePresence>
+        </motion.section>}
+      </AnimatePresence>
       <button className="fullscreen-toggle" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-pressed={fullscreen} title="Fullscreen · F / Command + 9" onClick={() => { void toggleFullscreen() }}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={fullscreen ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6' : 'M3 9V3h6M15 3h6v6M3 15v6h6M15 21h6v-6'} /></svg>
       </button>
-      {fullscreenError && <p className="fullscreen-error" role="status">{fullscreenError}</p>}
+      {!mobile && fullscreenError && <p className="fullscreen-error" role="status">{fullscreenError}</p>}
       <div className="music-control" onKeyDown={event => { if (event.key === 'Escape') setMusicOpen(false) }}>
         <button className="music-toggle" aria-label="Music settings" aria-expanded={musicOpen} aria-controls="music-panel" onClick={() => setMusicOpen(!musicOpen)}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13M9 8l11-2" /><ellipse cx="6" cy="18" rx="3" ry="2" /><ellipse cx="17" cy="16" rx="3" ry="2" />{!musicEnabled && <path d="M3 3 21 21" />}</svg>
