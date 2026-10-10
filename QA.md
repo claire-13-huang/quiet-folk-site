@@ -25,3 +25,19 @@ A touch-enabled context checked entry, food choices, actual Olive taps and the s
 ## Publication
 
 Only the edited source/documents and six new font/license files are included in the public source checkout. Original masters, references, user images, screenshots, raw downloads and browser test shortcuts remain excluded. npm run build performs the final typecheck and production build. Published files are compared with that exact build after GitHub Pages finishes.
+
+## Explore Room acceptance — 2026-10-09
+
+Implementation acceptance was completed locally before publication. Checkpoint `f3e507d` preserves the invitation source and the four supplied room images before feature changes. Unrelated untracked artwork and analytics-worker files were left in place. Original audio, letter text and analytics implementation were not changed by this feature.
+
+Production builds pass TypeScript and Vite compilation. The room is emitted as a separate lazy bundle; fresh entry requests contain neither the room bundle nor its four PNGs. The renderer starts only behind the final letter. The four production PNGs are byte-identical to the supplied originals.
+
+Chromium ran the actual opening video, invitation, Yes, celebration video, confirmed meeting, sushi choice, Olive dialogue, final letter and room handoff. WebKit with iPhone 15 emulation ran the same flow with the adjust-meeting and decide-food-later branches, entered the room without fullscreen, rotated between 844×390 and 390×844, and tapped a character inspection and its Close action. The mobile landscape envelope position was corrected because the existing dialogue covered its tap target.
+
+Desktop assertions cover drag/look, wheel dolly, stationery inspection, long-hold grab/move/drop, Cmd+Z, Ctrl+Z, reset and rereading the letter without creating another canvas. The background-music element remains the same, playing with a continuously advancing time across the letter and room transitions.
+
+A separate browser harness loads the actual room module and uses Chromium native touch input with iPhone emulation. Assertions cover one-finger look, pinch, pinch-to-single-finger continuation, tap inspection, long-hold movement/drop, exact transform restoration on undo and canvas disposal on abort. Final geometry and placement were visually inspected: paper stays above its placement surface, floor and ceiling cover vertical views, and timber uprights conceal reference joins. The scene remains a compact projection assembled from non-panoramic references; image perspective is not a mathematically exact reconstruction.
+
+Screenshots and automation scripts are local under ignored `output/playwright/`. WebKit emulation is engine-level evidence, not a physical iPhone device measurement. Existing font/preload warnings and the lazy-bundle size advisory do not prevent the checked flows.
+
+Forced WebGL context loss after a successful touch move shows the in-page retry. Retrying creates one fresh canvas and clears old inspection/history controls; unmounting removes that canvas. The retry path and the same-module abort cleanup both passed live browser assertions.

@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
 import { trackEvent } from './analytics'
+import { roomEntry } from './roomAssets'
+
+const ExploreRoom = lazy(() => import('./ExploreRoom'))
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
@@ -172,6 +175,9 @@ export function App() {
   const [meetingConfirmed, setMeetingConfirmed] = useState(false)
   const [foodChoice, setFoodChoice] = useState<string | null>(null)
   const [letterCopy, setLetterCopy] = useState(0)
+  const [roomRequested, setRoomRequested] = useState(false)
+  const [roomReady, setRoomReady] = useState(false)
+  const [roomEntryReady, setRoomEntryReady] = useState(false)
   const [activeFriend, setActiveFriend] = useState<number | null>(null)
   const [foodCopy, setFoodCopy] = useState(0)
   const [postFrameReady, setPostFrameReady] = useState(false)
@@ -396,16 +402,16 @@ export function App() {
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
   const exploring = stage === 'room-explore'
-  const exploreWidth = Math.min(w, h * 16 / 9)
-  const exploreHeight = exploreWidth * 9 / 16
-  const explorePosition = { left: (w - exploreWidth) / 2, top: w < 600 ? 48 : (h - exploreHeight) / 2, width: exploreWidth, height: exploreHeight }
+  useEffect(() => {
+    if (stage === 'hidden-letter' && letterCopy >= 1) setRoomRequested(true)
+  }, [stage, letterCopy])
   const openPrivateLetter = () => {
     setActiveFriend(null); setLetterCopy(0)
     track.current.unlock(); track.current.play('paper'); trackEvent('secret_letter_open'); setStage('hidden-letter')
   }
   const oliveFocus = stage === 'olive-npc'
-  const secretWidth = w < 600 ? 168 : 190
-  const secretPosition = { left: w < 600 ? w * .29 : w * .27, top: w < 600 ? 205 : h * .59, width: secretWidth }
+  const secretWidth = mobile && h < 500 ? 140 : w < 600 ? 168 : 190
+  const secretPosition = { left: w < 600 ? w * .29 : w * .27, top: mobile && h < 500 ? h * .13 : w < 600 ? 205 : h * .59, width: secretWidth }
   const opened = stage === 'opening' || stage === 'invitation-card'
   const planeW = mobile ? Math.min(w, h * 16 / 9) : Math.max(w, Math.min(h * 16 / 9, w * 1.35))
   const planeH = planeW * 9 / 16
@@ -520,7 +526,7 @@ export function App() {
               setCelebrationEnded(true)
             }}
             onError={() => { setCelebrationFailed(true); setCelebrationBlocked(true) }} />
-          <motion.img className="post-celebration-image" style={exploring ? explorePosition : undefined} src={media('celebration-room.jpg')} alt="" initial={false} animate={{ opacity: stationery ? 1 : 0 }} transition={{ duration: .6 }} />
+          <motion.img className="post-celebration-image" src={media('celebration-room.jpg')} alt="" initial={false} animate={{ opacity: stationery ? 1 : 0 }} transition={{ duration: .6 }} />
         </motion.div>
         {stage === 'celebration-video' && <div className="celebration-copy" aria-live="polite">
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: titleVisible && celebrationTime >= titleStart ? 1 : 0, y: celebrationTime >= titleStart ? 0 : 10 }} transition={{ duration: titleVisible ? .8 : .3 }}>Thank you for saying yes.</motion.p>
@@ -575,7 +581,10 @@ export function App() {
         onClick={openPrivateLetter}>
         <img src={media('sealed.webp')} alt="" /><span className="wax-seal" aria-hidden="true" />
       </motion.button>}
-      {stage === 'hidden-letter' && <>
+      {roomRequested && <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => setRoomEntryReady(true)} onLoad={event => { void event.currentTarget.decode().then(() => setRoomEntryReady(true)).catch(() => setRoomEntryReady(true)) }} initial={{ opacity: 0 }} animate={{ opacity: roomEntryReady ? 1 : 0 }} transition={{ duration: reduced ? .2 : 3 }} />}
+      {roomRequested && <Suspense fallback={null}><ExploreRoom active={exploring} blocked={activeFriend !== null} reduced={reduced} mobile={mobile} onReady={() => setRoomReady(true)} onFriend={setActiveFriend} onReadLetter={openPrivateLetter} /></Suspense>}
+      <AnimatePresence>
+      {stage === 'hidden-letter' && <motion.div key="private-letter-scene" className="private-letter-scene" exit={{ opacity: 0, y: 12, transition: { duration: reduced ? .15 : 1.1 } }}>
         <motion.div className="letter-envelope" initial={{ ...secretPosition, opacity: 1 }} animate={{ left: (w - 260) / 2, top: h / 2 - 110, width: 260, opacity: [1, 1, 0] }} transition={{ duration: 1.9, opacity: { duration: 1.9, times: [0, .85, 1], ease: 'linear' } }} aria-hidden="true">
           <motion.img src={media('sealed.webp')} alt="" initial={{ opacity: 1, rotateX: 0 }} animate={{ opacity: [1, 1, 0], rotateX: [0, 0, 65] }} transition={{ duration: 1.6, times: [0, .6, 1] }} />
           <motion.img src={media('envelope.webp')} alt="" initial={{ opacity: 0 }} animate={{ opacity: [0, 0, 1] }} transition={{ duration: 1.6, times: [0, .6, 1] }} />
@@ -586,18 +595,12 @@ export function App() {
           <div className="letter-scroll">
             {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 4 ? 'letter-miss' : i === 6 ? 'letter-signature' : i === 7 ? 'letter-date' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
           </div>
-          <button className="letter-close" onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
+          <button className="letter-close" disabled={!roomReady || !roomEntryReady || letterCopy < letterParagraphs.length} onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
         </motion.article>
-      </>}
-      {exploring && <>
-        {activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
-        <div className="friend-spots" style={explorePosition}>
-          {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)}>
-            <span className="friend-cue" aria-hidden="true"><svg viewBox="0 0 30 24"><path d="M5 2h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H14l-5 4v-4H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" /><circle cx="9" cy="10" r="1" /><circle cx="15" cy="10" r="1" /><circle cx="21" cy="10" r="1" /></svg><span>Talk</span></span>
-          </button>)}
-        </div>
-        <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>
-      </>}
+      </motion.div>}
+      </AnimatePresence>
+      {exploring && activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
+      {exploring && <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>}
       <AnimatePresence mode="wait">
         {exploring && activeFriend !== null && <motion.section key={activeFriend} className="olive-dialogue friend-dialogue" role="dialog" aria-label={`A wish from ${friends[activeFriend].name}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .3 }}>
           <span className="olive-name">{friends[activeFriend].name}</span>
