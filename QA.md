@@ -51,3 +51,9 @@ The production build and TypeScript check pass. Chromium completed the original 
 The playing background-music element is unchanged across closing and rereading. Original audio and analytics modules, letter wording and supplied artwork are unchanged. Production ending requests contain no ExploreRoom/Three.js bundle. Phone checks are browser emulation, not a physical iPhone measurement. The still image retains its existing centered cover crop on narrow screens; the full cast and all wishes remain accessible in landscape.
 
 A 20-second deferred entry-image request keeps Fold away disabled until the image is decoded; closing then displays the loaded, unblurred original with no canvas or open paper. This slow-network transition passed browser assertions.
+
+## Final scene replacement and quiet dialogue cues — 2026-10-20
+
+The final room now uses the supplied 图片/最后的衔接场景图.png unchanged. The 1672×941 production PNG is byte-identical to that file. Reading typography, paper geometry, blur transition, story text, soundtrack and analytics are unchanged from 8098eff.
+
+Each existing character has a small, steady 22×18 cream-gold speech bubble at 0.58 opacity. Talk appears only on hover or keyboard focus. Cue positions stay inside their character buttons and are moved below the viewport top when the landscape image is cropped; they do not cover faces. Native mouse clicks and iPhone/WebKit touchscreen taps on all four SVG centers opened the correct existing dialogues at 1440×900, 844×390 and 844×320. Hover and keyboard activation passed. The original complete invitation flow and the clear, static, canvas-free ending passed. Evidence is local under ignored output/playwright; phone checks are browser emulation.

@@ -28,3 +28,5 @@ blender
 
 .env
 .env.*
+
+!图片/最后的衔接场景图.png

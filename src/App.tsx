@@ -598,7 +598,9 @@ export function App() {
       </motion.div>}
       </AnimatePresence>
       {exploring && <div className="friend-spots" style={{ left: (w - backdropWidth) / 2, top: (h - backdropHeight) / 2, width: backdropWidth, height: backdropHeight }}>
-        {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)} />)}
+        {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)}>
+          <span className="friend-cue" aria-hidden="true" style={{ top: Math.max(0, 12 - (h - backdropHeight) / 2 - backdropHeight * (friend.y / 100 - .16)) }}><svg viewBox="0 0 30 24"><path d="M5 2h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H14l-5 4v-4H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" /><circle cx="9" cy="10" r="1" /><circle cx="15" cy="10" r="1" /><circle cx="21" cy="10" r="1" /></svg><span>Talk</span></span>
+        </button>)}
       </div>}
       {exploring && activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
       {exploring && <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>}
