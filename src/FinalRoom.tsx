@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { roomEntry } from './roomAssets'
 import { interactionAssets as art } from './roomInteractionAssets'
 import { LetterViewer, PaperDialog } from './LetterViewer'
+import { CharacterDialogue, scenePointToViewport, type Placement, type SceneRect } from './CharacterDialogue'
 import { saveRoomNote } from './roomApi'
 import { getSubmissionIdentity } from './analytics'
 import './room.css'
@@ -11,6 +12,13 @@ type Friend = { name: string; line: string; x: number; y: number }
 type Story = 'closed' | 'before' | 'offered' | 'viewer' | 'after' | 'compose' | 'kept'
 const before = ['…oh.\nYou caught me.', 'I was keeping something safe.']
 const offeredLine = 'Fine. You can read it.\nBut I’m taking it back afterwards.'
+// Measured against the supplied final image. Faces remain protected when the room is cropped.
+const characters = [
+  { anchor: { x: .33, y: .49 }, placement: 'above-right', face: { left: .224, top: .475, width: .105, height: .187 }, width: .23, height: .36 },
+  { anchor: { x: .69, y: .45 }, placement: 'left', face: { left: .69, top: .075, width: .12, height: .225 }, width: .21, height: .40 },
+  { anchor: { x: .70, y: .49 }, placement: 'above-left', face: { left: .688, top: .53, width: .10, height: .15 }, width: .22, height: .35 },
+  { anchor: { x: .47, y: .49 }, placement: 'above', face: { left: .414, top: .521, width: .105, height: .151 }, width: .18, height: .34 },
+] satisfies { anchor: { x: number; y: number }; placement: Placement; face: SceneRect; width: number; height: number }[]
 const position = (u: number, v: number, width: number, height: number): CSSProperties => ({ left: `${u * 100}%`, top: `${v * 100}%`, width: `${width * 100}%`, height: `${height * 100}%` })
 
 export default function FinalRoom({ active, reading, mobile, reduced, w, h, friends, onReady, onReadLetter }: { active: boolean; reading: boolean; mobile: boolean; reduced: boolean; w: number; h: number; friends: Friend[]; onReady: () => void; onReadLetter: () => void }) {
@@ -18,14 +26,21 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
   const [draft, setDraft] = useState(''), [letterId, setLetterId] = useState(() => crypto.randomUUID()), [letterBusy, setLetterBusy] = useState(false), [letterError, setLetterError] = useState('')
   const [noteReady, setNoteReady] = useState(false), [noteDismissed, setNoteDismissed] = useState(false)
   const [noteViewport, setNoteViewport] = useState<CSSProperties>()
+  const [imageSize, setImageSize] = useState<{ width: number; height: number }>()
+  const [projection, setProjection] = useState(() => ({ scene: { left: 0, top: 0, width: w, height: h }, viewport: { left: 0, top: 0, width: w, height: h }, controls: [] as SceneRect[] }))
   const [rating, setRating] = useState<number | null>(null), [hoverRating, setHoverRating] = useState<number | null>(null), [message, setMessage] = useState(''), [feedbackBusy, setFeedbackBusy] = useState(false), [ratingBusy, setRatingBusy] = useState(false), [feedbackError, setFeedbackError] = useState(''), [received, setReceived] = useState(false), [outroRevealed, setOutroRevealed] = useState(false)
   const [feedbackId] = useState(() => crypto.randomUUID()), [swipeHint, setSwipeHint] = useState(true)
   const [letterIdentity, setLetterIdentity] = useState(getSubmissionIdentity), [feedbackIdentity] = useState(getSubmissionIdentity)
-  const scroller = useRef<HTMLDivElement>(null)
+  const scroller = useRef<HTMLDivElement>(null), plane = useRef<HTMLDivElement>(null), room = useRef<HTMLElement>(null)
   const queue = useRef<Promise<unknown>>(Promise.resolve()), lastRating = useRef(0)
-  const sceneW = Math.max(w, h * 1672 / 941), sceneH = sceneW * 941 / 1672
+  const ratio = imageSize ? imageSize.width / imageSize.height : w / h
+  const sceneW = Math.max(w, h * ratio), sceneH = sceneW / ratio
   const orion = friends[1]
   const focused = story !== 'closed', modal = story === 'viewer' || story === 'compose'
+  const storyDialogue = ['before', 'offered', 'after', 'kept'].includes(story)
+  const activeCharacter = storyDialogue ? 1 : friend
+  const selectedCharacter = useRef(activeCharacter)
+  selectedCharacter.current = focused ? 1 : friend
   const showNote = noteReady && !noteDismissed && !focused && friend === null && active
   const attemptedLetter = useRef<string | null>(null)
   useEffect(() => {
@@ -37,7 +52,28 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
     visible.addEventListener('scroll', resize)
     return () => { visible.removeEventListener('resize', resize); visible.removeEventListener('scroll', resize) }
   }, [mobile, showNote])
-  useLayoutEffect(() => { if (scroller.current) scroller.current.scrollLeft = Math.max(0, (sceneW - w) / 2) }, [sceneW, w])
+  useLayoutEffect(() => {
+    const selected = selectedCharacter.current
+    if (scroller.current) scroller.current.scrollLeft = Math.max(0, selected === null ? (sceneW - w) / 2 : sceneW * friends[selected].x / 100 - w * .55)
+  }, [sceneW, w, friends])
+  useLayoutEffect(() => {
+    const surface = plane.current, viewport = room.current, scroll = scroller.current
+    if (!surface || !viewport || !scroll) return
+    const controls = Array.from(document.querySelectorAll<HTMLElement>('.music-control,.fullscreen-toggle'))
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const scene = surface.getBoundingClientRect(), view = viewport.getBoundingClientRect()
+      setProjection({ scene: { left: scene.left, top: scene.top, width: scene.width, height: scene.height }, viewport: { left: view.left, top: view.top, width: view.width, height: view.height }, controls: controls.map(control => { const rect = control.getBoundingClientRect(); return { left: rect.left, top: rect.top, width: rect.width, height: rect.height } }) })
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(measure) }
+    const observer = new ResizeObserver(schedule)
+    observer.observe(surface); observer.observe(viewport)
+    controls.forEach(control => observer.observe(control))
+    scroll.addEventListener('scroll', schedule, { passive: true })
+    measure()
+    return () => { observer.disconnect(); scroll.removeEventListener('scroll', schedule); cancelAnimationFrame(frame) }
+  }, [])
   useEffect(() => { if (!active) return; setSwipeHint(true); const hint = setTimeout(() => setSwipeHint(false), 8000); return () => clearTimeout(hint) }, [active])
   useEffect(() => {
     if (story !== 'kept') return
@@ -50,13 +86,15 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
     const dismiss = setTimeout(() => setNoteDismissed(true), 3200)
     return () => { clearTimeout(reveal); clearTimeout(dismiss) }
   }, [received])
-  const openOrion = () => {
-    setFriend(null); setLine(0); setStory('before')
-    scroller.current?.scrollTo({ left: Math.max(0, sceneW * orion.x / 100 - w * .55), behavior: reduced ? 'auto' : 'smooth' })
+  const openCharacter = (index: number) => {
+    setSwipeHint(false)
+    if (index === 1) { setFriend(null); setLine(0); setStory('before') }
+    else { setStory('closed'); setFriend(index) }
+    scroller.current?.scrollTo({ left: Math.max(0, sceneW * friends[index].x / 100 - w * .55), behavior: reduced ? 'auto' : 'smooth' })
   }
   const finishStory = () => { setStory('closed'); setNoteReady(true); if (!received) setNoteDismissed(false) }
   const next = () => {
-    if (story === 'before') { if (line < before.length - 1) setLine(v => v + 1); else setStory('offered') }
+    if (story === 'before') { if (line < before.length - 1) setLine(line + 1); else setStory('offered') }
   }
   const returnLetter = () => { setLine(0); setStory('after') }
   const keepLetter = async () => {
@@ -79,14 +117,20 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
     catch (error) { setFeedbackError(error instanceof Error ? error.message : 'Your note is still here. Please try again.') }
     finally { setFeedbackBusy(false) }
   }
-  const backdropFilter = reading ? 'blur(2px) brightness(1)' : modal ? 'blur(4px) brightness(.62)' : focused ? 'blur(0px) brightness(.87)' : 'blur(0px) brightness(1)'
-  return <section className={`final-room${active ? ' is-active' : ''}${showNote ? ' is-note-open' : ''}`} aria-label="The final room" aria-hidden={!active && !reading} onKeyDown={event => { if (event.key === 'Escape' && !modal) { setFriend(null); setStory('closed') } }}>
+  const backdropFilter = reading ? 'blur(2px) brightness(1)' : modal ? 'blur(4px) brightness(.62)' : activeCharacter !== null ? 'blur(0px) brightness(.96)' : 'blur(0px) brightness(1)'
+  const faces = characters.map(({ face }) => {
+    const point = scenePointToViewport({ x: face.left, y: face.top }, projection.scene)
+    return { left: point.x, top: point.y, width: face.width * projection.scene.width, height: face.height * projection.scene.height }
+  })
+  const dialogue = friend !== null ? friends[friend].line : story === 'before' ? before[line] : story === 'offered' ? offeredLine : story === 'after' ? <>I’ll keep this one safe.<br />And if another one happens to appear… I won’t complain.</> : 'Orion will keep this one safe too.'
+  const dialogueActions = friend !== null ? <button onClick={() => setFriend(null)}>Close</button> : story === 'before' ? <button onClick={next}>Continue</button> : story === 'offered' ? <button onClick={() => setStory('viewer')}>Read the letter</button> : story === 'after' ? <><button onClick={() => { setLetterError(''); setStory('compose') }}>Write something ♡</button><button onClick={finishStory}>Maybe another time</button></> : undefined
+  return <section ref={room} data-mobile={mobile} className={`final-room${active ? ' is-active' : ''}${showNote ? ' is-note-open' : ''}`} aria-label="The final room" aria-hidden={!active && !reading} onKeyDown={event => { if (event.key === 'Escape' && !modal) { setFriend(null); setStory('closed') } }}>
     <div className="scene-scroll" ref={scroller} inert={!active || modal || reading}>
-      <motion.div className="final-scene-plane" style={{ width: sceneW, height: sceneH, top: (h - sceneH) / 2, transformOrigin: `${orion.x}% ${orion.y}%` }} animate={{ scale: focused ? 1.045 : 1, x: focused ? -w * .012 : 0, y: focused ? h * .01 : 0, filter: backdropFilter }} transition={{ duration: reduced ? .15 : .9 }}>
-        <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => { setReady(true); onReady() }} onLoad={event => { void event.currentTarget.decode().catch(() => {}).then(() => { setReady(true); onReady() }) }} initial={{ opacity: 0 }} animate={{ opacity: ready ? 1 : 0 }} transition={{ duration: reduced ? .15 : 3 }} />
+      <motion.div ref={plane} className="final-scene-plane" style={{ width: sceneW, height: sceneH, top: mobile && w > h ? 0 : (h - sceneH) / 2 }} animate={{ filter: backdropFilter }} transition={{ duration: reduced ? .1 : .25 }}>
+        <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => { setReady(true); onReady() }} onLoad={event => { const image = event.currentTarget; setImageSize({ width: image.naturalWidth, height: image.naturalHeight }); void image.decode().catch(() => {}).then(() => { setReady(true); onReady() }) }} initial={{ opacity: 0 }} animate={{ opacity: ready ? 1 : 0 }} transition={{ duration: reduced ? .15 : 3 }} />
         {active && <div className="room-object-layer">
-          {friends.map((item, index) => <button key={item.name} className={`friend-spot${index === 1 ? ' orion-spot' : ''}`} style={{ left: `${item.x}%`, top: `${item.y}%` }} aria-label={index === 1 ? 'Orion' : `Talk to ${item.name}`} aria-expanded={index === 1 ? focused : friend === index} onClick={() => { if (index === 1) openOrion(); else { setStory('closed'); setFriend(index) } }}>
-            {index !== 1 && <span className="friend-cue" aria-hidden="true" style={{ top: Math.max(0, 12 - (h - sceneH) / 2 - sceneH * (item.y / 100 - .16)) }}><svg viewBox="0 0 30 24"><path d="M5 2h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H14l-5 4v-4H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" /><circle cx="9" cy="10" r="1" /><circle cx="15" cy="10" r="1" /><circle cx="21" cy="10" r="1" /></svg><span>Talk</span></span>}
+          {friends.map((item, index) => <button key={item.name} className={`friend-spot character-spot${activeCharacter === index ? ' is-speaking' : ''}${swipeHint ? ' is-inviting' : ''}`} style={{ left: `${item.x}%`, top: `${item.y}%`, width: `${characters[index].width * 100}%`, height: `${characters[index].height * 100}%` }} aria-label={index === 1 ? 'Orion' : `Talk to ${item.name}`} aria-expanded={activeCharacter === index} onClick={() => openCharacter(index)}>
+            <span className="character-cue" aria-hidden="true">…</span>
           </button>)}
           {(story === 'offered') && <motion.button className="orion-kept-letter scene-prop" aria-label="Read the letter Orion was keeping" style={position(orion.x / 100,.48,.075,.145)} initial={{ opacity: 0, y: -8, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .8 }} onClick={() => setStory('viewer')}><img src={art.letter} alt="" /><span>A letter for Claire</span></motion.button>}
         </div>}
@@ -94,14 +138,9 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
     </div>
     {active && <div className="final-room-interface" style={showNote ? noteViewport : undefined} inert={modal}>
       {swipeHint && mobile && sceneW > w + 80 && !focused && <p className="scene-swipe-hint">Take your time. Swipe to look around.</p>}
-      {friend !== null && <section className="olive-dialogue friend-dialogue" role="dialog" aria-label={`A wish from ${friends[friend].name}`}><span className="olive-name">{friends[friend].name}</span><p className="olive-line">{friends[friend].line}</p><button className="friend-close" onClick={() => setFriend(null)}>Close</button></section>}
       <AnimatePresence mode="wait">
-        {story === 'before' && <motion.button key={story+line} className="orion-dialogue olive-dialogue" aria-label={`Orion: ${before[line]}`} onClick={next} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3 }}><span className="olive-name">Orion</span><p>{before[line]}</p><span className="dialogue-hint">Continue</span></motion.button>}
-        {story === 'offered' && <motion.div key="offered" className="orion-dialogue olive-dialogue" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><span className="olive-name">Orion</span><p>{offeredLine}</p><button className="paper-action" onClick={() => setStory('viewer')}>Read the letter</button></motion.div>}
-        {story === 'after' && <motion.section key="question" className="orion-dialogue olive-dialogue" aria-label="Orion’s question" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><span className="olive-name">Orion</span><p>I’ll keep this one safe.<br />And if another one happens to appear… I won’t complain.</p><div className="orion-choices"><button onClick={() => { setLetterError(''); setStory('compose') }}>Write something ♡</button><button onClick={finishStory}>Maybe another time</button></div></motion.section>}
-        {story === 'kept' && <motion.section key="kept" className="orion-dialogue olive-dialogue" role="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><span className="olive-name">Orion</span><p>Orion will keep this one safe too.</p></motion.section>}
+        {activeCharacter !== null && <CharacterDialogue key={friends[activeCharacter].name} character={friends[activeCharacter].name} anchor={characters[activeCharacter].anchor} placement={characters[activeCharacter].placement} scene={projection.scene} viewport={projection.viewport} faces={faces} speakerFace={faces[activeCharacter]} controls={projection.controls} dialogue={dialogue} actions={dialogueActions} onClose={story === 'kept' ? undefined : () => { setFriend(null); setStory('closed') }} mobile={mobile} reduced={reduced} />}
       </AnimatePresence>
-      {focused && story !== 'kept' && <button className="orion-scene-close" aria-label="Close Orion’s story" onClick={finishStory}>×</button>}
       <AnimatePresence>
         {showNote && <motion.aside key="author-note" className="author-note" aria-label="A tiny note from Claire" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .6 }}>
           {received ? <div className="author-receipt" role="status" aria-live="polite">

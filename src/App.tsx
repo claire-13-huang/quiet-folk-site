@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
 import { trackEvent } from './analytics'
+import { GoldDust } from './GoldDust'
 const FinalRoom = lazy(() => import('./FinalRoom'))
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
@@ -621,6 +622,7 @@ export function App() {
           <p>Softens during films.</p>
         </div>}
       </div>
+      <GoldDust mobile={mobile} stage={stage} />
     </main>
   </MotionConfig>
 }
