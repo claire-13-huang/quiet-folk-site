@@ -142,7 +142,8 @@ export function App() {
   const [musicOpen, setMusicOpen] = useState(false)
   const [musicEnabled, setMusicEnabled] = useState(true)
   const [musicVolume, setMusicVolume] = useState(25)
-  const [returningToRoom] = useState(returnsToFinalRoom)
+  const [returningToRoom] = useState(() => window.location.hash !== '#play-again' && returnsToFinalRoom())
+  useEffect(() => { if (window.location.hash === '#play-again') window.history.replaceState(null, '', window.location.pathname + window.location.search) }, [])
   const [stage, setStage] = useState<Stage>(returningToRoom ? 'room-explore' : 'film')
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
@@ -609,6 +610,7 @@ export function App() {
           </AnimatePresence>
         </motion.section>}
       </AnimatePresence>
+      {!mobile && stage !== 'film' && <button className="replay-button" onClick={() => { window.location.hash = 'play-again'; window.location.reload() }}>Play again</button>}
       <button className="fullscreen-toggle" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-pressed={fullscreen} title="Fullscreen · F / Command + 9" onClick={() => { void toggleFullscreen() }}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={fullscreen ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6' : 'M3 9V3h6M15 3h6v6M3 15v6h6M15 21h6v-6'} /></svg>
       </button>
