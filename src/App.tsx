@@ -1,10 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
 import { trackEvent } from './analytics'
 import { roomEntry } from './roomAssets'
-
-const ExploreRoom = lazy(() => import('./ExploreRoom'))
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
@@ -25,10 +23,10 @@ const oliveLines = [
   'I think this belongs to you now.',
 ]
 const friends = [
-  { name: 'Olive', line: 'I’ll be waiting for all your happy stories. Have a wonderful trip — and save a little cuddle for me when you’re back.', x: 14, y: 66 },
-  { name: 'Orion', line: 'I’m not saying I’m excited… but you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 82, y: 24 },
-  { name: '大灰', line: 'May your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 84, y: 70 },
-  { name: '茶小熊', line: 'I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 37, y: 66 },
+  { name: 'Olive', line: 'I’ll be waiting for all your happy stories. Have a wonderful trip — and save a little cuddle for me when you’re back.', x: 25, y: 66 },
+  { name: 'Orion', line: 'I’m not saying I’m excited… but you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 79, y: 28 },
+  { name: '大灰', line: 'May your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 73, y: 66 },
+  { name: '茶小熊', line: 'I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 47, y: 66 },
 ]
 const sceneFiles = ['closed.webp', 'open.webp', 'envelope.webp', 'card.webp', 'celebration-poster.jpg', 'celebration-room.jpg', 'sealed.webp']
 type Stage = 'film' | 'envelope' | 'opening' | 'invitation-card' | 'celebration-video' | 'meeting-confirmation' | 'food-choice' | 'final-summary' | 'olive-npc' | 'hidden-letter' | 'room-explore'
@@ -176,7 +174,6 @@ export function App() {
   const [foodChoice, setFoodChoice] = useState<string | null>(null)
   const [letterCopy, setLetterCopy] = useState(0)
   const [roomRequested, setRoomRequested] = useState(false)
-  const [roomReady, setRoomReady] = useState(false)
   const [roomEntryReady, setRoomEntryReady] = useState(false)
   const [activeFriend, setActiveFriend] = useState<number | null>(null)
   const [foodCopy, setFoodCopy] = useState(0)
@@ -402,6 +399,8 @@ export function App() {
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
   const exploring = stage === 'room-explore'
+  const backdropWidth = Math.max(w, h * 1672 / 941)
+  const backdropHeight = backdropWidth * 941 / 1672
   useEffect(() => {
     if (stage === 'hidden-letter' && letterCopy >= 1) setRoomRequested(true)
   }, [stage, letterCopy])
@@ -511,7 +510,7 @@ export function App() {
         initial={false} animate={{ opacity: celebrating ? 1 : 0 }}
         transition={{ duration: reduced ? .15 : .4, delay: celebrating ? .2 : 0 }} style={{ pointerEvents: celebrating ? 'auto' : 'none' }}>
         <motion.div className="celebration-picture" style={{ transformOrigin: w < 600 ? '16% 12%' : '16% 55%' }} initial={false}
-          animate={{ filter: exploring ? 'blur(0px) brightness(0.94)' : oliveFocus ? 'blur(2px) brightness(0.86)' : stationery ? w < 600 ? 'blur(5px) brightness(0.72)' : 'blur(6px) brightness(0.72)' : 'blur(0px) brightness(1)', scale: exploring ? 1 : oliveFocus ? 1.12 : stationery ? 1.015 : 1, x: oliveFocus ? w * .055 : 0, y: oliveFocus && w >= 600 ? -8 : 0 }}
+          animate={{ filter: stage === 'hidden-letter' ? 'blur(2px) brightness(1)' : exploring ? 'blur(0px) brightness(1)' : oliveFocus ? 'blur(2px) brightness(0.86)' : stationery ? w < 600 ? 'blur(5px) brightness(0.72)' : 'blur(6px) brightness(0.72)' : 'blur(0px) brightness(1)', scale: exploring ? 1 : oliveFocus ? 1.12 : stationery ? 1.015 : 1, x: oliveFocus ? w * .055 : 0, y: oliveFocus && w >= 600 ? -8 : 0 }}
           transition={{ duration: reduced ? .2 : 1.25, scale: { duration: reduced ? .2 : oliveFocus || stage === 'hidden-letter' ? 1.4 : 24, ease: oliveFocus ? ease : 'linear' }, x: { duration: 1.4 }, y: { duration: 1.4 } }}>
           <div className="celebration-fill" style={{ backgroundImage: `url(${media('celebration-poster.jpg')})` }} aria-hidden="true" />
           <video ref={celebration} className="celebration-video" style={{ visibility: postFrameReady ? 'hidden' : 'visible', opacity: stationery ? 0 : 1, transition: 'opacity .6s' }} playsInline preload="auto" poster={media('celebration-poster.jpg')}
@@ -581,11 +580,10 @@ export function App() {
         onClick={openPrivateLetter}>
         <img src={media('sealed.webp')} alt="" /><span className="wax-seal" aria-hidden="true" />
       </motion.button>}
-      {roomRequested && <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => setRoomEntryReady(true)} onLoad={event => { void event.currentTarget.decode().then(() => setRoomEntryReady(true)).catch(() => setRoomEntryReady(true)) }} initial={{ opacity: 0 }} animate={{ opacity: roomEntryReady ? 1 : 0 }} transition={{ duration: reduced ? .2 : 3 }} />}
-      {roomRequested && <Suspense fallback={null}><ExploreRoom active={exploring} blocked={activeFriend !== null} reduced={reduced} mobile={mobile} onReady={() => setRoomReady(true)} onFriend={setActiveFriend} onReadLetter={openPrivateLetter} /></Suspense>}
+      {roomRequested && <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => setRoomEntryReady(true)} onLoad={event => { void event.currentTarget.decode().then(() => setRoomEntryReady(true)).catch(() => setRoomEntryReady(true)) }} initial={{ opacity: 0 }} animate={{ opacity: roomEntryReady ? 1 : 0, filter: stage === 'hidden-letter' ? 'blur(2px)' : 'blur(0px)' }} transition={{ opacity: { duration: reduced ? .2 : 3 }, filter: { duration: reduced ? .15 : .8 } }} />}
       <AnimatePresence>
       {stage === 'hidden-letter' && <motion.div key="private-letter-scene" className="private-letter-scene" exit={{ opacity: 0, y: 12, transition: { duration: reduced ? .15 : 1.1 } }}>
-        <motion.div className="letter-envelope" initial={{ ...secretPosition, opacity: 1 }} animate={{ left: (w - 260) / 2, top: h / 2 - 110, width: 260, opacity: [1, 1, 0] }} transition={{ duration: 1.9, opacity: { duration: 1.9, times: [0, .85, 1], ease: 'linear' } }} aria-hidden="true">
+        <motion.div className="letter-envelope" initial={{ ...secretPosition, opacity: 1 }} animate={{ left: (w - 320) / 2, top: h / 2 - 130, width: 320, opacity: [1, 1, 0] }} transition={{ duration: 1.9, opacity: { duration: 1.9, times: [0, .85, 1], ease: 'linear' } }} aria-hidden="true">
           <motion.img src={media('sealed.webp')} alt="" initial={{ opacity: 1, rotateX: 0 }} animate={{ opacity: [1, 1, 0], rotateX: [0, 0, 65] }} transition={{ duration: 1.6, times: [0, .6, 1] }} />
           <motion.img src={media('envelope.webp')} alt="" initial={{ opacity: 0 }} animate={{ opacity: [0, 0, 1] }} transition={{ duration: 1.6, times: [0, .6, 1] }} />
           <motion.span className="wax-seal" initial={{ opacity: 1 }} animate={{ opacity: [1, 1, 0], rotate: [0, 0, -12], scale: [1, 1, .94], y: [0, 0, -4] }} transition={{ duration: 1.25, times: [0, .75, 1] }} />
@@ -595,10 +593,13 @@ export function App() {
           <div className="letter-scroll">
             {letterParagraphs.map((paragraph, i) => <motion.p key={i} className={i === 0 ? 'letter-title' : i === 4 ? 'letter-miss' : i === 6 ? 'letter-signature' : i === 7 ? 'letter-date' : undefined} initial={{ opacity: 0, y: 6 }} animate={{ opacity: letterCopy >= i + 1 ? 1 : 0, y: letterCopy >= i + 1 ? 0 : 6 }} transition={{ duration: .6 }}>{paragraph}</motion.p>)}
           </div>
-          <button className="letter-close" disabled={!roomReady || !roomEntryReady || letterCopy < letterParagraphs.length} onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
+          <button className="letter-close" disabled={!roomEntryReady || letterCopy < letterParagraphs.length} onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
         </motion.article>
       </motion.div>}
       </AnimatePresence>
+      {exploring && <div className="friend-spots" style={{ left: (w - backdropWidth) / 2, top: (h - backdropHeight) / 2, width: backdropWidth, height: backdropHeight }}>
+        {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)} />)}
+      </div>}
       {exploring && activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
       {exploring && <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>}
       <AnimatePresence mode="wait">

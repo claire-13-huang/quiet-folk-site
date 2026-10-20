@@ -41,3 +41,13 @@ A separate browser harness loads the actual room module and uses Chromium native
 Screenshots and automation scripts are local under ignored `output/playwright/`. WebKit emulation is engine-level evidence, not a physical iPhone device measurement. Existing font/preload warnings and the lazy-bundle size advisory do not prevent the checked flows.
 
 Forced WebGL context loss after a successful touch move shows the in-page retry. Retrying creates one fresh canvas and clears old inspection/history controls; unmounting removes that canvas. The retry path and the same-module abort cleanup both passed live browser assertions.
+
+## Letter and still-room acceptance — 2026-10-20
+
+This ending replaces the earlier Explore Room behavior. Reading now uses the original entry image with a 2px blur, larger paper, 24px desktop/landscape handwriting (22px portrait), and a 26px cream Fold away action. Closing removes the paper and envelope animation, restores a 0px background blur, and mounts no canvas, 3D props, camera interactions, exploration hints or restore controls.
+
+The production build and TypeScript check pass. Chromium completed the original invitation/video flow, confirmed the meeting and sushi choice, opened the letter, closed it, opened all four existing wishes and reread the letter. WebKit with iPhone 15 emulation completed the alternate meeting/food branches and the same ending; 844×390 landscape and 390×844 portrait layouts passed. The last letter paragraph remains reachable by contained scrolling. Computed letter/button bounds and a 47px top / 34px bottom safe-area simulation passed. Screenshots are retained only under ignored output/playwright.
+
+The playing background-music element is unchanged across closing and rereading. Original audio and analytics modules, letter wording and supplied artwork are unchanged. Production ending requests contain no ExploreRoom/Three.js bundle. Phone checks are browser emulation, not a physical iPhone measurement. The still image retains its existing centered cover crop on narrow screens; the full cast and all wishes remain accessible in landscape.
+
+A 20-second deferred entry-image request keeps Fold away disabled until the image is decoded; closing then displays the loaded, unblurred original with no canvas or open paper. This slow-network transition passed browser assertions.
