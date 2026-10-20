@@ -1,5 +1,5 @@
 import { notificationStatements, deliverNotifications } from './notifications.js';
-import { saveRoomNote, deliverFeedbackNotifications, readRoomNotes, roomNotesPage } from './room-notes.js';
+import { saveRoomNote, deliverFeedbackNotifications, deliverRoomNoteNotifications, readRoomNotes, roomNotesPage } from './room-notes.js';
 import html from './dashboard.html';
 import css from './dashboard.css';
 import js from './dashboard.js.txt';
@@ -81,7 +81,7 @@ async function overview(env,range,hideTests=true) {
  }
  return {metrics,counts:counts.results,chart:chart.results,sessions:recent.results,food:food.results,replays:replays.count,funnel,range,now:Date.now()};
 }
-export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettled([deliverNotifications(env),deliverFeedbackNotifications(env)])); },async fetch(request,env,ctx) {
+export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettled([deliverNotifications(env),deliverFeedbackNotifications(env),deliverRoomNoteNotifications(env)])); },async fetch(request,env,ctx) {
  const path=new URL(request.url).pathname;
  try {
  if(path==='/collect') return await collect(request,env,ctx);

@@ -1,3 +1,4 @@
+import { returnsToFinalRoom } from './roomArchive'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
@@ -141,7 +142,8 @@ export function App() {
   const [musicOpen, setMusicOpen] = useState(false)
   const [musicEnabled, setMusicEnabled] = useState(true)
   const [musicVolume, setMusicVolume] = useState(25)
-  const [stage, setStage] = useState<Stage>('film')
+  const [returningToRoom] = useState(returnsToFinalRoom)
+  const [stage, setStage] = useState<Stage>(returningToRoom ? 'room-explore' : 'film')
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
   const [playBlocked, setPlayBlocked] = useState(false)
@@ -174,7 +176,7 @@ export function App() {
   const [meetingConfirmed, setMeetingConfirmed] = useState(false)
   const [foodChoice, setFoodChoice] = useState<string | null>(null)
   const [letterCopy, setLetterCopy] = useState(0)
-  const [roomRequested, setRoomRequested] = useState(false)
+  const [roomRequested, setRoomRequested] = useState(returningToRoom)
   const [roomEntryReady, setRoomEntryReady] = useState(false)
   const [foodCopy, setFoodCopy] = useState(0)
   const [postFrameReady, setPostFrameReady] = useState(false)
