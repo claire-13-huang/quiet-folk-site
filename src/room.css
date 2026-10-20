@@ -24,6 +24,7 @@
 .is-warm .room-warm-wash{opacity:1}
 @keyframes tiny-flame{0%,100%{opacity:.5;transform:scale(.96)}43%{opacity:.8;transform:scale(1.05)}76%{opacity:.55;transform:scale(.98)}}
 .final-room-interface{position:absolute;inset:0;pointer-events:none;z-index:2}
+.final-room-interface[inert]{visibility:hidden}
 .final-room-interface>button,.final-room-interface>section,.final-room-interface>aside{pointer-events:auto}
 .final-room-interface>.orion-dialogue{pointer-events:auto}
 .scene-swipe-hint,.match-hint{position:absolute;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:80%;text-align:center;font-size:17px;font-style:italic;color:#ead9b7c9;text-shadow:0 1px 5px #27190d;margin:0;pointer-events:none}
