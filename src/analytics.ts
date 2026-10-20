@@ -64,3 +64,18 @@ try {
   })
   }
 } catch { session = ''; /* If identity cannot persist, skip tracking rather than inventing new visitors. */ }
+
+// Form identity does not create analytics visits when storage/tracking is unavailable.
+let submissionIdentity: { visitor_id: string; session_id: string } | null = null
+export function getSubmissionIdentity() {
+  if (visitor && session) return { visitor_id: visitor, session_id: session }
+  if (submissionIdentity) return submissionIdentity
+  let id = ''
+  try {
+    id = localStorage.getItem('quiet-folk-visitor') || ''
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) id = ''
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem('quiet-folk-visitor', id) }
+  } catch { id ||= crypto.randomUUID() }
+  submissionIdentity = { visitor_id: id, session_id: crypto.randomUUID() }
+  return submissionIdentity
+}

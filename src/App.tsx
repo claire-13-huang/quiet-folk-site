@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
 import { trackEvent } from './analytics'
-import { roomEntry } from './roomAssets'
+const FinalRoom = lazy(() => import('./FinalRoom'))
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`
 const ease = [0.22, 0.61, 0.36, 1] as const
@@ -175,7 +175,6 @@ export function App() {
   const [letterCopy, setLetterCopy] = useState(0)
   const [roomRequested, setRoomRequested] = useState(false)
   const [roomEntryReady, setRoomEntryReady] = useState(false)
-  const [activeFriend, setActiveFriend] = useState<number | null>(null)
   const [foodCopy, setFoodCopy] = useState(0)
   const [postFrameReady, setPostFrameReady] = useState(false)
   const [oliveReady, setOliveReady] = useState(false)
@@ -399,13 +398,11 @@ export function App() {
   const titleStart = Math.max(0, celebrationDuration - 4.5)
   const titleVisible = celebrationDuration > 0 && celebrationTime < celebrationDuration - .3
   const exploring = stage === 'room-explore'
-  const backdropWidth = Math.max(w, h * 1672 / 941)
-  const backdropHeight = backdropWidth * 941 / 1672
   useEffect(() => {
     if (stage === 'hidden-letter' && letterCopy >= 1) setRoomRequested(true)
   }, [stage, letterCopy])
   const openPrivateLetter = () => {
-    setActiveFriend(null); setLetterCopy(0)
+    setLetterCopy(0)
     track.current.unlock(); track.current.play('paper'); trackEvent('secret_letter_open'); setStage('hidden-letter')
   }
   const oliveFocus = stage === 'olive-npc'
@@ -428,7 +425,7 @@ export function App() {
   }
 
   return <MotionConfig reducedMotion="user" transition={{ type: 'tween', ease }}>
-    <main className="experience" data-mobile={mobile} onKeyDown={event => { if (event.key === 'Escape') setActiveFriend(null) }} data-stage={stage} aria-label="An invitation for Colette">
+    <main className="experience" data-mobile={mobile} data-stage={stage} aria-label="An invitation for Colette">
       <motion.div className="room-fill" aria-hidden="true" animate={{ filter: extract ? 'blur(25px) brightness(0.42)' : 'blur(25px) brightness(0.62)' }} transition={{ duration: reduced ? .2 : 2, delay: extract ? .4 : 0 }} />
       <motion.div className="room" style={{ width: planeW, height: planeH, left: planeX, top: planeY, transformOrigin: '53.7% 58.3%' }}
         initial={false}
@@ -580,7 +577,7 @@ export function App() {
         onClick={openPrivateLetter}>
         <img src={media('sealed.webp')} alt="" /><span className="wax-seal" aria-hidden="true" />
       </motion.button>}
-      {roomRequested && <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => setRoomEntryReady(true)} onLoad={event => { void event.currentTarget.decode().then(() => setRoomEntryReady(true)).catch(() => setRoomEntryReady(true)) }} initial={{ opacity: 0 }} animate={{ opacity: roomEntryReady ? 1 : 0, filter: stage === 'hidden-letter' ? 'blur(2px)' : 'blur(0px)' }} transition={{ opacity: { duration: reduced ? .2 : 3 }, filter: { duration: reduced ? .15 : .8 } }} />}
+      {roomRequested && <Suspense fallback={null}><FinalRoom active={exploring} reading={stage === 'hidden-letter'} mobile={mobile} reduced={!!reduced} w={w} h={h} friends={friends} onReady={() => setRoomEntryReady(true)} onReadLetter={openPrivateLetter} /></Suspense>}
       <AnimatePresence>
       {stage === 'hidden-letter' && <motion.div key="private-letter-scene" className="private-letter-scene" exit={{ opacity: 0, y: 12, transition: { duration: reduced ? .15 : 1.1 } }}>
         <motion.div className="letter-envelope" initial={{ ...secretPosition, opacity: 1 }} animate={{ left: (w - 320) / 2, top: h / 2 - 130, width: 320, opacity: [1, 1, 0] }} transition={{ duration: 1.9, opacity: { duration: 1.9, times: [0, .85, 1], ease: 'linear' } }} aria-hidden="true">
@@ -596,20 +593,6 @@ export function App() {
           <button className="letter-close" disabled={!roomEntryReady || letterCopy < letterParagraphs.length} onClick={() => { track.current.play('slide'); setStage('room-explore') }}>Fold away</button>
         </motion.article>
       </motion.div>}
-      </AnimatePresence>
-      {exploring && <div className="friend-spots" style={{ left: (w - backdropWidth) / 2, top: (h - backdropHeight) / 2, width: backdropWidth, height: backdropHeight }}>
-        {friends.map((friend, i) => <button key={friend.name} className="friend-spot" style={{ left: `${friend.x}%`, top: `${friend.y}%` }} aria-label={`Talk to ${friend.name}`} aria-expanded={activeFriend === i} onClick={() => setActiveFriend(activeFriend === i ? null : i)}>
-          <span className="friend-cue" aria-hidden="true" style={{ top: Math.max(0, 12 - (h - backdropHeight) / 2 - backdropHeight * (friend.y / 100 - .16)) }}><svg viewBox="0 0 30 24"><path d="M5 2h20a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H14l-5 4v-4H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" /><circle cx="9" cy="10" r="1" /><circle cx="15" cy="10" r="1" /><circle cx="21" cy="10" r="1" /></svg><span>Talk</span></span>
-        </button>)}
-      </div>}
-      {exploring && activeFriend !== null && <button className="npc-dismiss" aria-label="Close animal dialogue" onClick={() => setActiveFriend(null)} />}
-      {exploring && <button className="saved-letter" aria-label="Read Claire's letter again" onClick={openPrivateLetter}><img src={media('sealed.webp')} alt="" /><span>Claire’s letter</span></button>}
-      <AnimatePresence mode="wait">
-        {exploring && activeFriend !== null && <motion.section key={activeFriend} className="olive-dialogue friend-dialogue" role="dialog" aria-label={`A wish from ${friends[activeFriend].name}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .3 }}>
-          <span className="olive-name">{friends[activeFriend].name}</span>
-          <p className="olive-line">{friends[activeFriend].line}</p>
-          <button className="friend-close" onClick={() => setActiveFriend(null)}>Close</button>
-        </motion.section>}
       </AnimatePresence>
 
       <AnimatePresence>

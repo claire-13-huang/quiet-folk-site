@@ -1,4 +1,5 @@
 import { notificationStatements, deliverNotifications } from './notifications.js';
+import { saveRoomNote, deliverFeedbackNotifications, readRoomNotes, roomNotesPage } from './room-notes.js';
 import html from './dashboard.html';
 import css from './dashboard.css';
 import js from './dashboard.js.txt';
@@ -80,10 +81,12 @@ async function overview(env,range,hideTests=true) {
  }
  return {metrics,counts:counts.results,chart:chart.results,sessions:recent.results,food:food.results,replays:replays.count,funnel,range,now:Date.now()};
 }
-export default {async scheduled(_event,env,ctx) { ctx.waitUntil(deliverNotifications(env)); },async fetch(request,env,ctx) {
+export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettled([deliverNotifications(env),deliverFeedbackNotifications(env)])); },async fetch(request,env,ctx) {
  const path=new URL(request.url).pathname;
  try {
  if(path==='/collect') return await collect(request,env,ctx);
+ if(path==='/room/private-letter') return await saveRoomNote(request,env,ctx,'private');
+ if(path==='/room/feedback') return await saveRoomNote(request,env,ctx,'feedback');
  if(path==='/health') return json({ok:true});
  if(path==='/admin'||path.startsWith('/admin/')) {
  if(!await authorized(request,env)) return new Response('Authentication required',{status:401,headers:{...headers,'WWW-Authenticate':'Basic realm="Private analytics", charset="UTF-8"'}});
@@ -98,6 +101,8 @@ export default {async scheduled(_event,env,ctx) { ctx.waitUntil(deliverNotificat
  return json({ok:true});
  }
  if(request.method!=='GET') return json({error:'Method not allowed'},405);
+ if(path==='/admin/api/room-notes') return json(await readRoomNotes(env));
+ if(path==='/admin/room-notes') return new Response(await roomNotesPage(env),{headers:{...headers,'Content-Type':'text/html; charset=utf-8'}});
  if(path==='/admin'||path==='/admin/') return new Response(html,{headers:{...headers,'Content-Type':'text/html; charset=utf-8'}});
  if(path==='/admin/style.css') return new Response(css,{headers:{...headers,'Content-Type':'text/css'}});
  if(path==='/admin/app.js') return new Response(js,{headers:{...headers,'Content-Type':'text/javascript'}});
