@@ -23,8 +23,8 @@ const oliveLines = [
   'I think this belongs to you now.',
 ]
 const friends = [
-  { name: 'Olive', line: 'I’ll be waiting for all your happy stories. Have a wonderful trip — and save a little cuddle for me when you’re back.', x: 25, y: 66 },
-  { name: 'Orion', line: 'I’m not saying I’m excited… but you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 79, y: 28 },
+  { name: 'Olive', line: 'I’ll be waiting for all your happy stories. Have a wonderful trip — and save a little cuddle for me when you’re back.', x: 27, y: 66 },
+  { name: 'Orion', line: 'I’m not saying I’m excited… but you two have a lovely little spark. Have the best trip. And bring me a treat.', x: 77, y: 28 },
   { name: '大灰', line: 'May your trip be full of little joys, sweet treats, and moments you’ll want to keep forever.', x: 73, y: 66 },
   { name: '茶小熊', line: 'I packed a little warmth for your journey. Laugh lots, take care of each other, and come home with happy stories.', x: 47, y: 66 },
 ]

@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 
-export function PaperDialog({ label, onClose, children, className = '' }: { label: string; onClose: () => void; children: ReactNode; className?: string }) {
+export function PaperDialog({ label, onClose, children, className = '', fitVisualViewport = false }: { label: string; onClose: () => void; children: ReactNode; className?: string; fitVisualViewport?: boolean }) {
   const ref = useRef<HTMLElement>(null), close = useRef(onClose)
+  const [viewport, setViewport] = useState<CSSProperties>()
   close.current = onClose
+  useEffect(() => {
+    if (!fitVisualViewport || !window.visualViewport) return
+    const visible = window.visualViewport
+    const resize = () => setViewport({ top: visible.offsetTop, left: visible.offsetLeft, width: visible.width, height: visible.height, right: 'auto', bottom: 'auto', '--feedback-visible-height': `${visible.height}px` } as CSSProperties)
+    resize()
+    visible.addEventListener('resize', resize)
+    visible.addEventListener('scroll', resize)
+    return () => { visible.removeEventListener('resize', resize); visible.removeEventListener('scroll', resize) }
+  }, [fitVisualViewport])
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     ref.current?.focus()
@@ -19,7 +29,7 @@ export function PaperDialog({ label, onClose, children, className = '' }: { labe
     document.addEventListener('keydown', key)
     return () => { document.removeEventListener('keydown', key); if (previous?.isConnected) previous.focus() }
   }, [])
-  return <motion.section ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={label} className={`room-paper-dialog ${className}`} initial={{ opacity: 0, scale: .985 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .985 }} transition={{ duration: .35 }}>{children}</motion.section>
+  return <motion.section ref={ref} style={viewport} tabIndex={-1} role="dialog" aria-modal="true" aria-label={label} className={`room-paper-dialog ${className}`} initial={{ opacity: 0, scale: .985 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .985 }} transition={{ duration: .35 }}>{children}</motion.section>
 }
 
 export function LetterViewer({ src, onClose }: { src: string; onClose: () => void }) {
