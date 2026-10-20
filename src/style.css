@@ -81,14 +81,14 @@
 .entry-copy{max-width:700px;font-size:clamp(30px,2.8vw,42px);line-height:1.25}
 .film .film-start{font-size:23px;min-height:48px;padding:10px 16px}
 .match-envelope{filter:sepia(.12) saturate(.94) brightness(.91)}
-.private-letter{left:calc(50% + (env(safe-area-inset-left) - env(safe-area-inset-right)) / 2);top:calc(50% - 16px + (env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 2);width:min(860px,calc(100% - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));height:min(850px,calc(100svh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));margin-left:calc(min(860px,100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)) / -2);margin-top:calc(min(850px,100svh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / -2);color:#573c29}
-.letter-scroll{inset:12% 15% 14%;font-family:'Kalam','Segoe Print','Bradley Hand',cursive;font-size:24px;line-height:1.5;padding-right:6px}
+.private-letter{left:calc(50% + (env(safe-area-inset-left) - env(safe-area-inset-right)) / 2);top:calc(50% - 16px + (env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 2);width:min(760px,calc(100% - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));height:min(780px,calc(100svh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));margin-left:calc(min(760px,100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)) / -2);margin-top:calc(min(780px,100svh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / -2);color:#573c29}
+.letter-scroll{inset:12% 15% 14%;font-family:'Kalam','Segoe Print','Bradley Hand',cursive;font-size:21px;line-height:1.5;padding-right:6px}
 .letter-scroll p{margin:0 0 21px;white-space:pre-line}
-.letter-scroll .letter-title{font-family:'Caveat','Bradley Hand',cursive;font-size:46px;font-weight:500;line-height:1.1;margin-bottom:24px;transform:rotate(-1deg);transform-origin:left center}
+.letter-scroll .letter-title{font-family:'Caveat','Bradley Hand',cursive;font-size:40px;font-weight:500;line-height:1.1;margin-bottom:24px;transform:rotate(-1deg);transform-origin:left center}
 .letter-scroll .letter-signature{font-family:'Caveat','Ma Shan Zheng','Kaiti SC',STKaiti,cursive;font-size:35px;font-weight:500;font-style:normal;line-height:1.15;margin:22px 0 9px;transform:rotate(-1deg);transform-origin:left center}
-.letter-scroll .letter-miss{font-size:27px;color:#824743;letter-spacing:.025em;margin:24px 0}
-.letter-scroll .letter-date{font-family:'Caveat','Bradley Hand',cursive;font-size:27px;margin-top:8px}
-@media(max-width:599px){.entry-copy{font-size:31px;max-width:330px}.film .film-start{font-size:22px}.letter-scroll{inset:12% 14% 14%;font-size:22px;line-height:1.52}.letter-scroll p{margin-bottom:23px}.letter-scroll .letter-title{font-size:41px}.letter-scroll .letter-signature{font-size:34px}.letter-scroll .letter-miss{font-size:25px}}
+.letter-scroll .letter-miss{font-size:24px;color:#824743;letter-spacing:.025em;margin:24px 0}
+.letter-scroll .letter-date{font-family:'Caveat','Bradley Hand',cursive;font-size:24px;margin-top:8px}
+@media(max-width:599px){.entry-copy{font-size:31px;max-width:330px}.film .film-start{font-size:22px}.letter-scroll{inset:12% 14% 14%;font-size:20px;line-height:1.52}.letter-scroll p{margin-bottom:23px}.letter-scroll .letter-title{font-size:37px}.letter-scroll .letter-signature{font-size:34px}.letter-scroll .letter-miss{font-size:23px}}
 
 .entry-background{position:absolute;inset:0;pointer-events:none;background:#302317 url('/media/entry-study-clean.png') center/cover no-repeat}
 .entry-copy{position:absolute;z-index:2;left:50%;top:45%;transform:translate(-50%,-50%);width:94%;max-width:1400px;height:auto;overflow:visible;clip-path:none;white-space:normal;text-align:center;font-family:'Cormorant Garamond',Baskerville,Georgia,serif;font-weight:500;font-size:clamp(34px,5.1vw,86px);line-height:1.05;letter-spacing:-.025em;color:#f7e9ce;text-shadow:0 2px 6px #2b180e40}
