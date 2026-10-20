@@ -68,7 +68,7 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
   useLayoutEffect(() => {
     const surface = plane.current, viewport = room.current, scroll = scroller.current
     if (!surface || !viewport || !scroll) return
-    const controls = Array.from(document.querySelectorAll<HTMLElement>('.music-control,.fullscreen-toggle'))
+    const controls = Array.from(document.querySelectorAll<HTMLElement>('.music-control,.fullscreen-toggle,.replay-button,.room-archive-open'))
     let frame = 0
     const measure = () => {
       frame = 0
@@ -186,7 +186,7 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
   const dialogue = friend !== null ? friends[friend].line : story === 'before' ? before[line] : story === 'offered' ? offeredLine : story === 'after' ? <>I’ll keep this one safe.<br />And if another one happens to appear… I won’t complain.</> : 'Orion will keep this one safe too.'
   const dialogueActions = friend !== null ? <button onClick={() => setFriend(null)}>Close</button> : story === 'before' ? <button onClick={next}>Continue</button> : story === 'offered' ? <button onClick={() => setStory('viewer')}>Read the letter</button> : story === 'after' ? <><button onClick={() => { setLetterError(''); setStory('compose') }}>Write something ♡</button><button onClick={finishStory}>Maybe another time</button></> : undefined
   const actionsWithArchive=activeCharacter===1&&hasArchive?<>{dialogueActions}<button onClick={openArchive}>Kept here</button></>:dialogueActions
-  return <section ref={room} data-mobile={mobile} className={`final-room${active ? ' is-active' : ''}${showNote ? ' is-note-open' : ''}${activeCharacter !== null ? ' is-talking' : ''}${received && noteDismissed ? ' is-file-closed' : ''}`} aria-label="The final room" aria-hidden={!active && !reading} onKeyDown={event => { if (event.key === 'Escape' && !modal) { if (showNote && !feedbackBusy) { if(received)closeReceipt();else setNoteDismissed(true) }; setFriend(null); setStory('closed') } }}>
+  return <section ref={room} data-mobile={mobile} className={`final-room${active ? ' is-active' : ''}${hasArchive ? ' has-archive' : ''}${showNote ? ' is-note-open' : ''}${activeCharacter !== null ? ' is-talking' : ''}${received && noteDismissed ? ' is-file-closed' : ''}`} aria-label="The final room" aria-hidden={!active && !reading} onKeyDown={event => { if (event.key === 'Escape' && !modal) { if (showNote && !feedbackBusy) { if(received)closeReceipt();else setNoteDismissed(true) }; setFriend(null); setStory('closed') } }}>
     <div className="scene-scroll" ref={scroller} inert={!active || modal || reading || showNote}>
       <motion.div ref={plane} className="final-scene-plane" style={{ width: sceneW, height: sceneH, top: mobile && w > h ? 0 : (h - sceneH) / 2 }} animate={{ filter: backdropFilter }} transition={{ duration: reduced ? .1 : .25 }}>
         <motion.img className="room-entry-anchor" src={roomEntry} alt="" aria-hidden="true" onError={() => { setReady(true); onReady() }} onLoad={event => { const image = event.currentTarget; setImageSize({ width: image.naturalWidth, height: image.naturalHeight }); void image.decode().catch(() => {}).then(() => { setReady(true); onReady() }) }} initial={{ opacity: 0 }} animate={{ opacity: ready ? 1 : 0 }} transition={{ duration: reduced ? .15 : 3 }} />
@@ -233,6 +233,7 @@ export default function FinalRoom({ active, reading, mobile, reduced, w, h, frie
         </aside></PaperDialog>}
       </AnimatePresence>
       {noteReady && !received && !showNote && !focused && !archiveOpen && friend === null && <button className="author-note-reopen" aria-label="Open Claire’s note" onClick={reopenNote}><svg viewBox="0 0 24 20" width="21" height="18" aria-hidden="true"><path d="M2 3h20v14H2zM2 3l10 8L22 3" /></svg><span>Claire’s note</span></button>}
+      {hasArchive && !showNote && !focused && !archiveOpen && friend === null && <button className="room-archive-open" title="Read and edit your saved letters" onClick={openArchive}><svg viewBox="0 0 24 20" width="21" height="18" aria-hidden="true"><path d="M2 3h20v14H2zM2 3l10 8L22 3" /></svg><span>Your letters</span></button>}
       <button className="saved-letter" aria-label="Read Claire's letter again" onClick={() => { setStory('closed'); setFriend(null); onReadLetter() }}><img src={`${import.meta.env.BASE_URL}media/sealed.webp`} alt="" /><span>Claire’s letter</span></button>
     </div>}
     <AnimatePresence>

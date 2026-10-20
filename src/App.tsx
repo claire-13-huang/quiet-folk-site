@@ -1,4 +1,4 @@
-import { returnsToFinalRoom } from './roomArchive'
+import { returnsToFinalRoom, roomArchiveKey } from './roomArchive'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import { Soundtrack } from './audio'
@@ -142,8 +142,21 @@ export function App() {
   const [musicOpen, setMusicOpen] = useState(false)
   const [musicEnabled, setMusicEnabled] = useState(true)
   const [musicVolume, setMusicVolume] = useState(25)
+  const [replayError, setReplayError] = useState('')
   const [returningToRoom] = useState(() => window.location.hash !== '#play-again' && returnsToFinalRoom())
-  useEffect(() => { if (window.location.hash === '#play-again') window.history.replaceState(null, '', window.location.pathname + window.location.search) }, [])
+  useEffect(() => {
+    if (window.location.hash !== '#play-again') return
+    // Clear again after navigation so a late save in the old page cannot restore its archive.
+    try { localStorage.removeItem(roomArchiveKey) }
+    catch { setReplayError('This browser could not clear your saved letters. Please allow website storage and try again.') }
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [])
+  const playAgain = () => {
+    try { localStorage.removeItem(roomArchiveKey) }
+    catch { setReplayError('This browser could not clear your saved letters. Please allow website storage and try again.'); return }
+    window.location.hash = 'play-again'
+    window.location.reload()
+  }
   const [stage, setStage] = useState<Stage>(returningToRoom ? 'room-explore' : 'film')
   const [assetsReady, setAssetsReady] = useState(false)
   const [assetFailed, setAssetFailed] = useState(false)
@@ -323,10 +336,7 @@ export function App() {
     const element = video.current
     if (!element || playPending.current) return
     if (mobile && !entered.current && !mobileEntryReady.current) { setOrientationGate(true); return }
-    if (!mobile && !entered.current && !document.fullscreenElement) {
-      void toggleFullscreen().then(active => { if (active) enterFilm() })
-      return
-    }
+    if (!mobile && !entered.current && !document.fullscreenElement && document.fullscreenEnabled && typeof document.documentElement.requestFullscreen === 'function') void toggleFullscreen()
     if (videoFailed) { if (assetsReady) { trackEvent('come_in'); beginEnvelope() } return }
     playPending.current = true
     track.current.unlock()
@@ -610,7 +620,8 @@ export function App() {
           </AnimatePresence>
         </motion.section>}
       </AnimatePresence>
-      {!mobile && stage !== 'film' && <button className="replay-button" onClick={() => { window.location.hash = 'play-again'; window.location.reload() }}>Play again</button>}
+      {stage !== 'film' && <button className="replay-button" title="Start again and clear the letters on this device. Submitted letters stay with Claire." onClick={playAgain}>Play again</button>}
+      {replayError && <p className="replay-error" role="alert">{replayError}</p>}
       <button className="fullscreen-toggle" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-pressed={fullscreen} title="Fullscreen · F / Command + 9" onClick={() => { void toggleFullscreen() }}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={fullscreen ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6' : 'M3 9V3h6M15 3h6v6M3 15v6h6M15 21h6v-6'} /></svg>
       </button>
