@@ -8,7 +8,7 @@ type Particle = {
 type QuietRect = { left: number; top: number; right: number; bottom: number }
 
 const colors = ['#c6a15b', '#d8b875', '#ead39a', '#f2dfad']
-const particleLimit = 64
+const particleLimit = 76
 const quietAreas = [
   '.entry-copy', '.film-start', '.open-hint', '.invitation-card', '.celebration-copy',
   '.olive-dialogue', '.secret-envelope', '.private-letter', '.saved-letter',
@@ -42,7 +42,7 @@ export function GoldDust({ mobile, stage }: { mobile: boolean; stage: string }) 
       let particles: Particle[] = []
       let lastPoint: { x: number; y: number } | null = null
       let distanceCarried = 0
-      let nextSpacing = 16 + Math.random() * 8
+      let nextSpacing = 12 + Math.random() * 8
       let elements: HTMLElement[] = []
       let rects: QuietRect[] = []
       let measuredAt = -Infinity
@@ -126,8 +126,8 @@ export function GoldDust({ mobile, stage }: { mobile: boolean; stage: string }) 
         particles.push({
           x: x + Math.cos(angle) * spread, y: y + Math.sin(angle) * spread,
           vx: (Math.random() - .5) * .025, vy: (Math.random() - .58) * .022,
-          size: Math.random() < .055 ? 2.5 + Math.random() : .8 + Math.random() * 1.4,
-          alpha: .15 + Math.random() * .4, born: now, life: 450 + Math.random() * 550,
+          size: Math.random() < .055 ? 2.7 + Math.random() * .8 : 1 + Math.random() * 1.6,
+          alpha: .24 + Math.random() * .4, born: now, life: 550 + Math.random() * 550,
           color: Math.random() < .025 ? '#f3e7c9' : colors[Math.floor(Math.random() * colors.length)],
         })
         if (!frame) frame = window.requestAnimationFrame(paint)
@@ -147,7 +147,7 @@ export function GoldDust({ mobile, stage }: { mobile: boolean; stage: string }) 
               addParticle(lastPoint.x + dx * fraction, lastPoint.y + dy * fraction, now)
             }
             distanceCarried %= nextSpacing
-            nextSpacing = 16 + Math.random() * 8
+            nextSpacing = 12 + Math.random() * 8
           }
         }
         lastPoint = point
