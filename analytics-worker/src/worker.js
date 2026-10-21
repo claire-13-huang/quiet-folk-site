@@ -1,4 +1,5 @@
 import { notificationStatements, deliverNotifications } from './notifications.js';
+import { requestIP, ipStatement, describeVisitors } from './visitor-identity.js';
 import { saveRoomNote, deliverFeedbackNotifications, deliverRoomNoteNotifications, readRoomNotes, roomNotesPage } from './room-notes.js';
 import html from './dashboard.html';
 import css from './dashboard.css';
@@ -43,21 +44,21 @@ async function collect(request,env,ctx) {
  const country=typeof geo.country==='string'?geo.country.slice(0,8):'Unknown';
  const region=typeof geo.region==='string'?geo.region.slice(0,80):'Unknown';
  const active=Math.min(data.active_seconds,previous?Math.max(0,Math.ceil((now-previous.started)/1000)):30);
+ const ip=requestIP(request);
  const notices=await notificationStatements(env,data.session_id,data.event,now);
  const analyticsWrites=[
  env.DB.prepare(`INSERT INTO sessions (session_id,visitor_id,origin,started,last_seen,active_seconds,device,browser,os,country,region,ended,is_test) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET last_seen=MAX(last_seen,excluded.last_seen),active_seconds=MAX(active_seconds,excluded.active_seconds),ended=CASE WHEN excluded.last_seen>=last_seen THEN excluded.ended ELSE ended END`).bind(data.session_id,data.visitor_id,origin,now,now,active,info.device,info.browser,info.os,country,region,data.event==='session_end'?1:0,test),
  env.DB.prepare('INSERT OR IGNORE INTO events (event_id,session_id,event,timestamp,food) VALUES (?,?,?,?,?)').bind(data.event_id,data.session_id,data.event,stamp,data.event==='food_choice'?data.food:null),
  ];
+ if(ip)analyticsWrites.push(ipStatement(env,data.session_id,ip,now));
  try { await env.DB.batch([...analyticsWrites,...notices]); }
  catch {
   // A failed notification write must never discard the analytics event.
   await env.DB.batch(analyticsWrites);
   console.warn('Notification storage unavailable; analytics event retained');
  }
- const ip=request.headers.get('CF-Connecting-IP')?.trim();
- const requestIP=ip && ip.length<=45 && /^[0-9a-fA-F:.]+$/.test(ip)?ip:'不可用';
  // Delivery runs outside the request response and analytics transaction.
- ctx.waitUntil(deliverNotifications(env,fetch,Date.now(),{session:data.session_id,ip:requestIP}).catch(()=>console.warn('Notification delivery deferred')));
+ ctx.waitUntil(deliverNotifications(env,fetch,Date.now(),{session:data.session_id,ip:ip||'不可用'}).catch(()=>console.warn('Notification delivery deferred')));
  return json({ok:true},200,cors);
 }
 async function overview(env,range,hideTests=true) {
@@ -79,7 +80,7 @@ async function overview(env,range,hideTests=true) {
  const row=await query(`SELECT COUNT(*) count FROM sessions s WHERE s.started>=?${filter} AND (SELECT COUNT(DISTINCT event) FROM events WHERE session_id=s.session_id AND event IN (${steps.map(()=>'?').join(',')}))=?`,since,...steps,steps.length).first();
  funnel.push({event:journey[i],count:row.count});
  }
- return {metrics,counts:counts.results,chart:chart.results,sessions:recent.results,food:food.results,replays:replays.count,funnel,range,now:Date.now()};
+ return {metrics,counts:counts.results,chart:chart.results,sessions:await describeVisitors(env,recent.results),food:food.results,replays:replays.count,funnel,range,now:Date.now()};
 }
 export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettled([deliverNotifications(env),deliverFeedbackNotifications(env),deliverRoomNoteNotifications(env)])); },async fetch(request,env,ctx) {
  const path=new URL(request.url).pathname;
@@ -112,7 +113,7 @@ export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettl
  const session=await env.DB.prepare('SELECT * FROM sessions WHERE session_id=?').bind(id).first();
  if(!session) return json({error:'Session not found'},404);
  const [visitor,events]=await Promise.all([env.DB.prepare('SELECT COUNT(*) visits,MIN(started) first_seen FROM sessions WHERE visitor_id=?').bind(session.visitor_id).first(),env.DB.prepare("SELECT event,timestamp,food FROM events WHERE session_id=? AND event!='heartbeat' ORDER BY timestamp").bind(id).all()]);
- return json({session,visitor,events:events.results});
+ return json({session:(await describeVisitors(env,[session]))[0],visitor,events:events.results});
  }
  }
  return json({error:'Not found'},404);
