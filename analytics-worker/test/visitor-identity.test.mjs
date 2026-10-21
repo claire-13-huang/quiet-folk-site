@@ -61,10 +61,16 @@ test('excluding one QA session does not exclude the real visitor or future visit
 });
 
 test('scope migration retains browser-wide tests without excluding mixed real visitors',async()=>{
- const DB=database(true),onlyTest=randomUUID(),mixed=randomUUID(),now=Date.now();
- for(const [visitor,flag] of [[onlyTest,1],[onlyTest,1],[mixed,1],[mixed,0]])DB.sqlite.prepare('INSERT INTO sessions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').run(randomUUID(),visitor,origin,now,now,0,'Desktop','Chrome','macOS','HK','Unknown',0,flag);
+ const DB=database(true),onlyTest=randomUUID(),mixed=randomUUID(),legacyTest=randomUUID(),mixedReal=randomUUID(),now=Date.now();
+ for(const [visitor,flag,session] of [[onlyTest,1,randomUUID()],[onlyTest,1,randomUUID()],[mixed,1,legacyTest],[mixed,0,mixedReal]])DB.sqlite.prepare('INSERT INTO sessions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').run(session,visitor,origin,now,now,0,'Desktop','Chrome','macOS','HK','Unknown',0,flag);
  DB.sqlite.exec(readFileSync(new URL('../migrations/0009_test_visitor_scope.sql',import.meta.url),'utf8'));
+ DB.sqlite.exec(readFileSync(new URL('../migrations/0010_legacy_test_session_exclusions.sql',import.meta.url),'utf8'));
  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM test_visitors').get().n,1);
+ assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM session_test_exclusions WHERE session_id=?').get(legacyTest).n,1);
+ const env={DB,ADMIN_PASSWORD:password};
+ for(const flag of [true,false])assert.equal((await worker.fetch(new Request('https://worker.test/admin/api/session/'+mixedReal+'/test',{method:'POST',headers:{Authorization:'Basic '+btoa('admin:'+password),Origin:'https://worker.test','Content-Type':'application/json'},body:JSON.stringify({is_test:flag})}),env,{})).status,200);
+ assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(legacyTest).is_test,1);
+ assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(mixedReal).is_test,0);
  const a=randomUUID(),b=randomUUID();await collect({DB},onlyTest,a,'192.0.2.1');await collect({DB},mixed,b,'192.0.2.2');
  assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(a).is_test,1);assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(b).is_test,0);DB.sqlite.close();
 });
