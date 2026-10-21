@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 import { requestIP,describeVisitors } from '../src/visitor-identity.js';
 const bundled=await build({entryPoints:[fileURLToPath(new URL('../src/worker.js',import.meta.url))],bundle:true,write:false,format:'esm',platform:'neutral',loader:{'.html':'text','.css':'text','.txt':'text'}});
 const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'));
-function database(){const sqlite=new DatabaseSync(':memory:');const dir=new URL('../migrations/',import.meta.url);for(const file of readdirSync(dir).filter(f=>f.endsWith('.sql')).sort())sqlite.exec(readFileSync(new URL(file,dir),'utf8'));const statement=(sql,args=[])=>({sql,args,bind(...values){return statement(sql,values)},async first(){return sqlite.prepare(sql).get(...args)||null},async all(){return{results:sqlite.prepare(sql).all(...args)}},async run(){return sqlite.prepare(sql).run(...args)}});return {sqlite,prepare:statement,async batch(rows){sqlite.exec('BEGIN');try{const result=rows.map(r=>sqlite.prepare(r.sql).run(...r.args));sqlite.exec('COMMIT');return result}catch(error){sqlite.exec('ROLLBACK');throw error}}}}
+function database(beforeScope=false){const sqlite=new DatabaseSync(':memory:');const dir=new URL('../migrations/',import.meta.url);for(const file of readdirSync(dir).filter(f=>f.endsWith('.sql')&&(!beforeScope||f<'0009')).sort())sqlite.exec(readFileSync(new URL(file,dir),'utf8'));const statement=(sql,args=[])=>({sql,args,bind(...values){return statement(sql,values)},async first(){return sqlite.prepare(sql).get(...args)||null},async all(){return{results:sqlite.prepare(sql).all(...args)}},async run(){return sqlite.prepare(sql).run(...args)}});return {sqlite,prepare:statement,async batch(rows){sqlite.exec('BEGIN');try{const result=rows.map(r=>sqlite.prepare(r.sql).run(...r.args));sqlite.exec('COMMIT');return result}catch(error){sqlite.exec('ROLLBACK');throw error}}}}
 const origin='https://october-with-you.vercel.app',password='LOCAL_TEST_ONLY_ADMIN_PASSWORD_123456789';
 function collect(env,visitor,session,ip,site=origin){return worker.fetch(new Request('https://worker.test/collect',{method:'POST',headers:{Origin:site,'Content-Type':'text/plain','CF-Connecting-IP':ip,'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/155.0.0.0'},body:JSON.stringify({visitor_id:visitor,session_id:session,event_id:randomUUID(),event:'page_open',timestamp:Date.now(),active_seconds:0,page_path:'/'})}),env,{waitUntil(p){p.catch(()=>{})}})}
 function admin(env,path){return worker.fetch(new Request('https://worker.test'+path,{headers:{Authorization:'Basic '+btoa('admin:'+password)}}),env,{waitUntil(){}})}
@@ -46,4 +46,25 @@ test('100 recent visits with multiple IPs stay within D1 parameter limits',async
  DB.sqlite.prepare('INSERT INTO session_ips VALUES(?,?,?,?,?)').run(rows[99].session_id,'198.51.100.1',now,now,'request');
  const limited={prepare(sql){const query=DB.prepare(sql);return {...query,bind(...args){assert.ok(args.length<=100,'D1 allows at most 100 bound parameters');return query.bind(...args)}}}};
  const described=await describeVisitors({DB:limited},rows);assert.equal(described.length,100);assert.deepEqual(described[99].ip_matches,['Colette']);assert.equal(described[99].display_name,null);DB.sqlite.close();
+});
+test('excluding one QA session does not exclude the real visitor or future visits',async()=>{
+ const DB=database(),env={DB,ADMIN_PASSWORD:password},visitor=randomUUID(),real=randomUUID(),qa=randomUUID();
+ await collect(env,visitor,real,'198.51.100.8');await collect(env,visitor,qa,'203.0.113.9');DB.sqlite.prepare('INSERT INTO visitor_names VALUES(?,?,?,?)').run(visitor,origin,'Colette',Date.now());
+ DB.sqlite.prepare('INSERT INTO session_test_exclusions VALUES(?,?,?)').run(qa,'isolated_qa_session',Date.now());DB.sqlite.prepare('UPDATE sessions SET is_test=1 WHERE session_id=?').run(qa);
+ const next=randomUUID();await collect(env,visitor,next,'198.51.100.9');let detail=await(await admin(env,'/admin/api/session/'+next)).json();assert.equal(detail.session.is_test,0);assert.equal(detail.session.display_name,'Colette');assert.equal(detail.visitor.visits,2);assert.equal(detail.visitor.is_test,0);
+ detail=await(await admin(env,'/admin/api/session/'+qa)).json();assert.equal(detail.session.display_name,null);assert.equal(detail.session.is_test,1);assert.equal(detail.visitor.is_test,0);
+ let overview=await(await admin(env,'/admin/api/overview?range=24H')).json();assert.equal(overview.metrics.visits,2);assert.ok(overview.sessions.every(s=>s.session_id!==qa));
+ const mark=flag=>worker.fetch(new Request('https://worker.test/admin/api/session/'+real+'/test',{method:'POST',headers:{Authorization:'Basic '+btoa('admin:'+password),Origin:'https://worker.test','Content-Type':'application/json'},body:JSON.stringify({is_test:flag})}),env,{});
+ assert.equal((await mark(true)).status,200);const other=randomUUID();await collect(env,visitor,other,'192.0.2.8');assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(other).is_test,1);
+ assert.equal((await mark(false)).status,200);assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(qa).is_test,1);assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(real).is_test,0);
+ assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM test_visitors').get().n,0);DB.sqlite.close();
+});
+
+test('scope migration retains browser-wide tests without excluding mixed real visitors',async()=>{
+ const DB=database(true),onlyTest=randomUUID(),mixed=randomUUID(),now=Date.now();
+ for(const [visitor,flag] of [[onlyTest,1],[onlyTest,1],[mixed,1],[mixed,0]])DB.sqlite.prepare('INSERT INTO sessions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').run(randomUUID(),visitor,origin,now,now,0,'Desktop','Chrome','macOS','HK','Unknown',0,flag);
+ DB.sqlite.exec(readFileSync(new URL('../migrations/0009_test_visitor_scope.sql',import.meta.url),'utf8'));
+ assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM test_visitors').get().n,1);
+ const a=randomUUID(),b=randomUUID();await collect({DB},onlyTest,a,'192.0.2.1');await collect({DB},mixed,b,'192.0.2.2');
+ assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(a).is_test,1);assert.equal(DB.sqlite.prepare('SELECT is_test FROM sessions WHERE session_id=?').get(b).is_test,0);DB.sqlite.close();
 });

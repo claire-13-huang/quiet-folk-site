@@ -19,7 +19,7 @@ export async function describeVisitors(env,sessions) {
  ]);
  const known=addresses.results.length?await env.DB.prepare(`SELECT DISTINCT i.ip,n.name,n.visitor_id,n.origin FROM session_ips i JOIN sessions s USING(session_id) JOIN visitor_names n ON n.visitor_id=s.visitor_id AND n.origin=s.origin WHERE s.is_test=0 AND i.ip IN (SELECT ip FROM session_ips WHERE session_id IN (${placeholders}))`).bind(...sessions.map(s=>s.session_id)).all():{results:[]};
  return sessions.map(session=>{
-  const label=labels.results.find(n=>n.visitor_id===session.visitor_id&&n.origin===session.origin);
+  const label=session.is_test?null:labels.results.find(n=>n.visitor_id===session.visitor_id&&n.origin===session.origin);
   const ip_addresses=addresses.results.filter(row=>row.session_id===session.session_id);
   const matches=label||session.is_test?[]:known.results.filter(row=>row.origin===session.origin&&ip_addresses.some(address=>address.ip===row.ip));
   return {...session,display_name:label?.name||null,ip_addresses,ip_matches:[...new Set(matches.map(row=>row.name))]};

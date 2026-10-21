@@ -32,7 +32,7 @@ export function trackEvent(event: EventName, food?: string) {
 try {
   const invitationOrigin = location.origin === 'https://october-with-you.vercel.app' || location.origin === 'https://claire-13-huang.github.io'
   const adminPath = /(^|\/)admin(\/|$)/.test(location.pathname)
-  if (invitationOrigin && !adminPath) {
+  if (invitationOrigin && !adminPath && sessionStorage.getItem('quiet-folk-qa') !== '1') {
   const stored = localStorage.getItem('quiet-folk-visitor')
   if (stored) visitor = stored
   else {

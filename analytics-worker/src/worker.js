@@ -38,7 +38,7 @@ async function collect(request,env,ctx) {
  if (!Number.isFinite(stamp)||stamp<now-86400000||stamp>now+300000) return json({error:'Invalid timestamp'},400,cors);
  const previous=await env.DB.prepare('SELECT visitor_id,origin,started,is_test FROM sessions WHERE session_id=?').bind(data.session_id).first();
  if (previous&&(previous.visitor_id!==data.visitor_id||previous.origin!==origin)) return json({error:'Session mismatch'},409,cors);
- const test=previous ? previous.is_test : (await env.DB.prepare('SELECT COALESCE(MAX(is_test),0) flag FROM sessions WHERE visitor_id=? AND origin=?').bind(data.visitor_id,origin).first()).flag;
+ const test=previous ? previous.is_test : (await env.DB.prepare('SELECT COUNT(*) flag FROM test_visitors WHERE visitor_id=? AND origin=?').bind(data.visitor_id,origin).first()).flag;
  const info=deviceInfo(request.headers.get('User-Agent')||'');
  const geo=request.cf||{};
  const country=typeof geo.country==='string'?geo.country.slice(0,8):'Unknown';
@@ -98,7 +98,10 @@ export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettl
  if(typeof data.is_test!=='boolean') return json({error:'Invalid test flag'},400);
  const row=await env.DB.prepare('SELECT visitor_id,origin FROM sessions WHERE session_id=?').bind(id).first();
  if(!row) return json({error:'Session not found'},404);
- await env.DB.prepare('UPDATE sessions SET is_test=? WHERE visitor_id=? AND origin=?').bind(data.is_test?1:0,row.visitor_id,row.origin).run();
+ await env.DB.batch([
+  data.is_test?env.DB.prepare('INSERT OR IGNORE INTO test_visitors(visitor_id,origin) VALUES(?,?)').bind(row.visitor_id,row.origin):env.DB.prepare('DELETE FROM test_visitors WHERE visitor_id=? AND origin=?').bind(row.visitor_id,row.origin),
+  env.DB.prepare('UPDATE sessions SET is_test=CASE WHEN ?=1 OR EXISTS(SELECT 1 FROM session_test_exclusions x WHERE x.session_id=sessions.session_id) THEN 1 ELSE 0 END WHERE visitor_id=? AND origin=?').bind(data.is_test?1:0,row.visitor_id,row.origin)
+ ]);
  return json({ok:true});
  }
  if(request.method!=='GET') return json({error:'Method not allowed'},405);
@@ -112,7 +115,7 @@ export default {async scheduled(_event,env,ctx) { ctx.waitUntil(Promise.allSettl
  const id=path.split('/').pop();
  const session=await env.DB.prepare('SELECT * FROM sessions WHERE session_id=?').bind(id).first();
  if(!session) return json({error:'Session not found'},404);
- const [visitor,events]=await Promise.all([env.DB.prepare('SELECT COUNT(*) visits,MIN(started) first_seen FROM sessions WHERE visitor_id=?').bind(session.visitor_id).first(),env.DB.prepare("SELECT event,timestamp,food FROM events WHERE session_id=? AND event!='heartbeat' ORDER BY timestamp").bind(id).all()]);
+ const [visitor,events]=await Promise.all([env.DB.prepare('SELECT COUNT(*) visits,MIN(started) first_seen,(SELECT COUNT(*) FROM test_visitors WHERE visitor_id=? AND origin=?) is_test FROM sessions WHERE visitor_id=? AND origin=? AND (?=1 OR is_test=0)').bind(session.visitor_id,session.origin,session.visitor_id,session.origin,session.is_test).first(),env.DB.prepare("SELECT event,timestamp,food FROM events WHERE session_id=? AND event!='heartbeat' ORDER BY timestamp").bind(id).all()]);
  return json({session:(await describeVisitors(env,[session]))[0],visitor,events:events.results});
  }
  }
